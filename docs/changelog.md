@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## v1.0.0 - 2026-07-13
+
+### Final release acceptance
+
+- Re-ran frontend lint, 17 frontend tests, production build, 21 backend tests, backend typecheck/build, and 15 Playwright scenarios.
+- Verified the production whiteboard editing, persistence, PNG export, Mock Analyze/Generate, preview confirmation, batch history, CORS, console health, and mobile layout.
+- Confirmed tracked files and Git history contain no real OpenAI API key and that environment, dependency, build, and test artifacts remain excluded.
 
 ### Production deployment
 

@@ -6,8 +6,9 @@
 - Vercel frontend is deployed from the `frontend` Root Directory.
 - `VITE_API_BASE_URL` and exact-origin `FRONTEND_ORIGIN` are configured.
 - Online page load, CORS, Mock Analyze, Mock Generate preview, Cancel, and browser console checks pass.
+- Final v1.0.0 desktop, mobile, persistence, export, editing, and batch-history acceptance passes online.
 - Live AI remains optional and has not used a real paid API request in this acceptance environment.
-- Create and push `v1.0.0` only after explicit release approval.
+- Publish `v1.0.0` only after the final release commit passes GitHub Actions.
 
 ## Product improvements
 

@@ -248,13 +248,13 @@ npm run build
 npm run test:e2e
 ```
 
-The latest local acceptance completed on 2026-07-13 with 17 frontend unit tests, 21 backend tests, and 15 Playwright scenarios passing. The stage-seven GitHub Actions run also completed successfully. A Vite chunk-size warning remains non-blocking and is not hidden by changing the warning threshold.
+The final v1.0.0 local acceptance completed on 2026-07-13 with 17 frontend unit tests, 21 backend tests, and 15 Playwright scenarios passing. The release commit is tagged only after its GitHub Actions run succeeds. A Vite chunk-size warning remains non-blocking and is not hidden by changing the warning threshold.
 
 To regenerate the privacy-safe project screenshot, start the Mock backend and frontend at their default local addresses, then run `npm run screenshot` in `frontend`.
 
 ## Deployment
 
-The Vercel frontend and Render backend were deployed and verified on 2026-07-13. Online acceptance covered frontend loading, backend health, exact-origin CORS, Mock Analyze, Mock Generate preview, Cancel behavior, browser console errors, page errors, and failed network requests.
+The Vercel frontend and Render backend were deployed and verified on 2026-07-13. Final online acceptance covered frontend loading, backend health, exact-origin CORS, drawing and editing, Undo/Redo, local persistence, PNG export, Mock Analyze, Mock Generate, Preview/Apply/Cancel, batch Undo/Redo, mobile layout, browser console errors, page errors, and failed network requests.
 
 ### Render backend
 
@@ -317,7 +317,6 @@ The deployed public configuration remains in Mock mode and does not require or e
 
 ## Future Work
 
-- Create the `v1.0.0` tag only after explicit release approval; deployment and Mock-mode online acceptance are complete.
 - Add arrow connectors and improved automatic graph layouts.
 - Add pan, zoom, element grouping, and richer text editing.
 - Add optional authenticated cloud persistence and collaboration without weakening local-first use.

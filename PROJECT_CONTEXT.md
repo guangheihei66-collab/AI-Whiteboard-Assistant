@@ -29,11 +29,11 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Desktop three-column layout and small-screen stacked layout.
 - Backend API tests, frontend unit tests, Playwright E2E, Error Boundary, bounded history, and freehand sampling.
 - One-click Windows startup with environment validation, opt-in project-local dependency installation, separate service windows, readiness checks, and browser opening.
+- Final v1.0.0 local and production acceptance covering core drawing, editing, persistence, Mock AI flows, CORS, console health, and mobile layout.
 
 ## Unfinished work
 
 - Live AI has not been tested with a real API key in this release-acceptance environment.
-- The `v1.0.0` tag remains pending explicit release approval.
 - Product roadmap items such as arrow connectors, pan/zoom, cloud persistence, and collaboration remain future work.
 
 ## Resolved bugs
@@ -57,3 +57,4 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Prepare deployment before tagging; do not claim an online release until real URLs are verified.
 - Keep the reusable launcher inside each repository and configure it with JSON instead of installing a machine-global launcher.
 - Deploy the static `frontend` directory to Vercel and the Express `backend` to Render; keep the public deployment in Mock mode unless Live credentials are intentionally configured server-side.
+- Create the release tag only after the final release commit passes GitHub Actions; never overwrite an existing release tag.
