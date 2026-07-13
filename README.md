@@ -76,7 +76,29 @@ AI-Whiteboard-Assistant/
 └── README.md
 ```
 
-## Run in Mock mode
+## One-click local startup on Windows
+
+Double-click `start-project.cmd` in the repository root. The launcher validates `project-start.json`, opens the backend and frontend in separate terminal windows, waits for both services, and then opens `http://localhost:5173`.
+
+Mock mode is the default, so an API key is not required. If a service has no `node_modules` directory, the launcher explains that npm will use the committed package files and npm registry, then asks before running the configured project-local install command.
+
+To stop the project, press `Ctrl+C` in each service window or close both service windows. The launcher does not install global packages, change `PATH`, change the machine PowerShell policy, or run as a background Windows service.
+
+Safe configuration-only validation:
+
+```powershell
+.\start-project.cmd -ValidateOnly
+```
+
+Start without opening the browser:
+
+```powershell
+.\start-project.cmd -NoBrowser
+```
+
+The three reusable files are `start-project.cmd`, `scripts/start-project.ps1`, and `project-start.json`. See [Reusable project launcher](docs/reusable-project-launcher.md) for adapting them to another project.
+
+## Run in Mock mode manually
 
 Mock mode is the default and does not need an OpenAI API key. It is the recommended starting point for GitHub users.
 

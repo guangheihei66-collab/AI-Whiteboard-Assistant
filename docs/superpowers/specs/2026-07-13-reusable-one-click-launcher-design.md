@@ -24,14 +24,14 @@ The configuration uses a versioned structure:
 {
   "version": 1,
   "browserUrl": "http://localhost:5173",
-  "startupTimeoutSeconds": 60,
+  "startupTimeoutSeconds": 90,
   "services": [
     {
       "name": "Backend",
       "directory": "backend",
       "installCommand": "npm.cmd install",
       "startCommand": "npm.cmd run dev",
-      "readyUrl": "http://localhost:3001/api/health"
+      "readyUrl": "http://127.0.0.1:3001/api/health"
     },
     {
       "name": "Frontend",
@@ -54,7 +54,7 @@ Required fields are `version`, `browserUrl`, and a non-empty `services` array. E
 4. Resolve every service directory and reject missing directories or paths outside the repository root.
 5. For a service with an npm `installCommand`, check for `node_modules`. If it is missing, explain that installation uses the dependencies declared by that service and the npm registry, then ask for confirmation. Other ecosystems may provide an `installCommand`, but the launcher does not infer their dependency-directory convention and therefore does not run it automatically.
 6. Open each service in its own visible terminal window. The window title identifies the project and service. Closing that window, or pressing `Ctrl+C` in it, stops that service.
-7. Poll configured readiness URLs until all configured services respond or the timeout expires.
+7. Poll configured readiness URLs without the system HTTP proxy until all configured services respond or the timeout expires. The current Express service uses the IPv4 loopback address, while Vite uses `localhost` because it may bind the IPv6 loopback address on Windows.
 8. Open `browserUrl` after readiness succeeds. On timeout, keep the service windows open and display a clear diagnostic instead of pretending startup succeeded.
 
 The launcher does not read or print `.env` contents. Services continue to load their own environment configuration normally.

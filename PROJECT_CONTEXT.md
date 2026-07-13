@@ -9,7 +9,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Frontend: React, TypeScript, Vite, Tailwind CSS, Konva, react-konva, Vitest, React Testing Library, and Playwright.
 - Backend: Node.js, Express, TypeScript, Zod, OpenAI Node SDK, Node test runner, and Supertest.
 - Persistence: versioned browser localStorage.
-- Automation: GitHub Actions on Node.js 24 LTS.
+- Automation: GitHub Actions on Node.js 24 LTS and a project-local, configuration-driven Windows launcher.
 
 ## Current architecture
 
@@ -18,6 +18,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - The browser calls only the Express backend for AI operations.
 - The backend validates Analyze and Generate input/output and supports deterministic Mock mode or backend-only Live mode.
 - Generated content follows Generate, validate, preview, confirm, and batch-apply steps.
+- `start-project.cmd` delegates to a reusable PowerShell launcher, while `project-start.json` keeps service-specific commands and readiness URLs outside the script logic.
 
 ## Completed functionality
 
@@ -27,6 +28,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Versioned storage validation and legacy migration.
 - Desktop three-column layout and small-screen stacked layout.
 - Backend API tests, frontend unit tests, Playwright E2E, Error Boundary, bounded history, and freehand sampling.
+- One-click Windows startup with environment validation, opt-in project-local dependency installation, separate service windows, readiness checks, and browser opening.
 
 ## Unfinished work
 
@@ -43,6 +45,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - AI request cleanup now avoids updates after unmount while remaining compatible with React StrictMode effect replay.
 - Small screens no longer inherit a forced 980px document width.
 - Freehand lines ignore sub-pixel duplicate movement and stop growing after 5,000 point pairs.
+- Local startup readiness checks bypass the Windows proxy and use the correct IPv4/IPv6 loopback address for each service.
 
 ## Important design decisions
 
@@ -52,3 +55,4 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Never call OpenAI from the frontend or commit a real environment file.
 - Mock mode is the default for local development, CI, and public evaluation.
 - Prepare deployment before tagging; do not claim an online release until real URLs are verified.
+- Keep the reusable launcher inside each repository and configure it with JSON instead of installing a machine-global launcher.

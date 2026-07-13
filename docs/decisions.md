@@ -23,3 +23,9 @@ Reason: browser bundles and repositories must never contain the API key, and pub
 Decision: prepare Render for Express and Vercel for Vite, but do not create a release tag before real online acceptance.
 
 Reason: these hosts match the two-package architecture, while a verified deployment must precede a public v1.0.0 claim.
+
+## 2026-07-13 - Project-local reusable launcher
+
+Decision: use a root CMD entry point, a reusable PowerShell implementation, and a versioned JSON service configuration instead of installing one machine-global launcher.
+
+Reason: each repository remains self-contained, reviewable, Git-friendly, and safely removable. Future projects reuse the same scripts by changing only service directories, commands, and readiness URLs.

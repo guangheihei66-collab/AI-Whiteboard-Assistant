@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Reusable local launcher
+
+- Added a Windows `start-project.cmd` entry point for one-click frontend and backend startup.
+- Added versioned service configuration, repository path validation, dependency consent, readiness checks, and automatic browser opening.
+- Documented how to reuse the launcher without global installation or system configuration changes.
+
 ### Stage eight - Deployment preparation and packaging
 
 - Added Render Blueprint preparation and production API configuration safeguards.

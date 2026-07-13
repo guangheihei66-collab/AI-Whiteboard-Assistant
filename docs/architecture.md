@@ -15,3 +15,9 @@ Mock mode returns deterministic local results without a key. Live mode calls Ope
 ## Deployment boundary
 
 Render hosts the compiled Express backend. Vercel hosts the Vite static frontend. `VITE_API_BASE_URL` points the browser to Render, and `FRONTEND_ORIGIN` allows only verified Vercel origins. Deployment is currently prepared but not completed.
+
+## Local development launcher
+
+`start-project.cmd` is the Windows double-click boundary. It invokes `scripts/start-project.ps1` with a process-only execution-policy bypass. The PowerShell script validates the versioned `project-start.json`, keeps all service paths inside the repository, optionally requests permission for missing npm dependencies, opens visible service terminals, checks readiness, and opens the frontend.
+
+Project-specific commands and URLs live only in `project-start.json`, so later projects can reuse the launcher without changing its implementation. The launcher does not install global packages, modify system configuration, read secret values, or manage production processes.

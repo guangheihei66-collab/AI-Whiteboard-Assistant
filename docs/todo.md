@@ -17,3 +17,4 @@
 - Pan, zoom, grouping, and richer text editing.
 - Optional accounts, cloud boards, and collaboration.
 - Evidence-based bundle splitting and loading optimization.
+- Add a cross-platform shell entry point only if macOS or Linux users request it; the current one-click launcher intentionally targets Windows.

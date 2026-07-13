@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "browserUrl": "http://localhost:5173",
+  "startupTimeoutSeconds": 90,
+  "services": [
+    {
+      "name": "Backend",
+      "directory": "backend",
+      "installCommand": "npm.cmd install",
+      "startCommand": "npm.cmd run dev",
+      "readyUrl": "http://127.0.0.1:3001/api/health"
+    },
+    {
+      "name": "Frontend",
+      "directory": "frontend",
+      "installCommand": "npm.cmd install",
+      "startCommand": "npm.cmd run dev -- --strictPort",
+      "readyUrl": "http://localhost:5173"
+    }
+  ]
+}
