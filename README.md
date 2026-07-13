@@ -1,5 +1,13 @@
 # AI Whiteboard Assistant
 
+> An Excalidraw-inspired React whiteboard with secure, preview-first AI analysis and content generation.
+
+[![CI](https://github.com/guangheihei66-collab/AI-Whiteboard-Assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/guangheihei66-collab/AI-Whiteboard-Assistant/actions/workflows/ci.yml)
+
+**Online demo:** 尚未部署. Local release acceptance and GitHub Actions CI pass, but no frontend or backend URL has completed online verification.
+
+![AI Whiteboard Assistant desktop interface](docs/images/ai-whiteboard-assistant.png)
+
 AI Whiteboard Assistant is a student software engineering project inspired by Excalidraw. It combines a typed Konva whiteboard with a secure Express AI service. AI can analyze the current board or propose new content, but a proposal never changes the canvas until the user previews and explicitly applies it.
 
 ## Technology stack
@@ -24,11 +32,32 @@ AI Whiteboard Assistant is a student software engineering project inspired by Ex
 - Live mode that calls the OpenAI Responses API from the backend only
 - Compact canvas summaries: long Line point arrays become bounds, point count, and approximate length
 - Loading, duplicate-submit protection, Cancel, Retry, friendly errors, and Mock/Live labels
+- React Error Boundary with a safe reload view
+- Responsive desktop three-column and small-screen stacked layouts
+- Frontend unit tests, backend API tests, Playwright E2E, and GitHub Actions CI
+
+## System architecture
+
+```mermaid
+flowchart LR
+  subgraph Browser["Frontend - React, TypeScript, Konva"]
+    UI["Toolbar, Canvas, AI Panel"] --> State["Canvas state and bounded history"]
+    State <--> Storage["Versioned localStorage"]
+  end
+
+  UI -->|"Analyze or Generate JSON"| API["Express Backend"]
+  API --> Validation["Zod validation and safety limits"]
+  Validation --> Mock["Mock mode"]
+  Validation -->|"Live mode only"| OpenAI["OpenAI API"]
+```
+
+Canvas state, selection, batch history, persistence, and preview application stay in the frontend. All AI requests pass through Express; the browser never calls OpenAI directly. Mock and Live modes share the same validated response contracts.
 
 ## Project structure
 
 ```text
 AI-Whiteboard-Assistant/
+├── .github/workflows/ci.yml  # Frontend, backend, and E2E checks
 ├── frontend/
 │   ├── src/components/       # Canvas, Toolbar, Transformer, AI panel, and preview overlay
 │   ├── src/hooks/            # Canvas history, shortcuts, and auto-save
@@ -41,6 +70,9 @@ AI-Whiteboard-Assistant/
 │   ├── src/schemas/          # Zod analysis and generated-canvas schemas
 │   ├── src/utils/            # Compact canvas summarization
 │   └── src/app.ts            # Express security and middleware setup
+├── docs/                     # Architecture, decisions, roadmap, and images
+├── render.yaml               # Render backend Blueprint
+├── PROJECT_CONTEXT.md        # Durable project state
 └── README.md
 ```
 
@@ -88,6 +120,21 @@ The default model is `gpt-5.6-luna`, selected for cost-sensitive text workloads.
 The API key must exist only in `backend/.env`. Never place it in frontend code, `frontend/.env`, browser storage, screenshots, issues, or commits.
 
 The frontend normally uses `http://localhost:3001`. To change it, copy `frontend/.env.example` to `frontend/.env.local` and edit `VITE_API_BASE_URL`.
+
+## Environment variables
+
+| Package | Variable | Required | Purpose |
+| --- | --- | --- | --- |
+| Frontend | `VITE_API_BASE_URL` | Production only | Public Express backend origin, for example a verified Render URL |
+| Backend | `PORT` | No | HTTP port; defaults to `3001` |
+| Backend | `FRONTEND_ORIGIN` | Yes in production | Exact allowed frontend origin; multiple exact origins may be comma-separated |
+| Backend | `AI_MOCK_MODE` | No | `true` by default; set `false` only for configured Live mode |
+| Backend | `OPENAI_MODEL` | Live only | Structured-output-compatible model name |
+| Backend | `OPENAI_API_KEY` | Live only | Server-side key configured in the host dashboard, never in Git |
+| Backend | `OPENAI_TIMEOUT_MS` | No | Upstream request timeout in milliseconds |
+| Backend | `AI_RATE_LIMIT` | No | AI requests allowed per 15-minute window |
+
+The committed `.env.example` files contain development placeholders only. Production values belong in Render and Vercel dashboards.
 
 ## API
 
@@ -177,6 +224,40 @@ npm run build
 npm run test:e2e
 ```
 
+The latest local acceptance completed on 2026-07-13 with 17 frontend unit tests, 21 backend tests, and 15 Playwright scenarios passing. The stage-seven GitHub Actions run also completed successfully. A Vite chunk-size warning remains non-blocking and is not hidden by changing the warning threshold.
+
+To regenerate the privacy-safe project screenshot, start the Mock backend and frontend at their default local addresses, then run `npm run screenshot` in `frontend`.
+
+## Deployment preparation
+
+Deployment is prepared but has **not** been performed. Do not replace the status above until both URLs are real and the online acceptance checklist passes.
+
+### Render backend
+
+The root `render.yaml` defines the backend service:
+
+- Root Directory: `backend`
+- Build Command: `npm ci && npm run build`
+- Start Command: `npm start`
+- Health Check Path: `/api/health`
+- Default mode: Mock
+
+In Render, set `FRONTEND_ORIGIN` after Vercel provides the real frontend URL. Add `OPENAI_API_KEY` only through the Render Dashboard when Live mode is intentionally enabled.
+
+### Vercel frontend
+
+Import the GitHub repository as a Vercel project and configure:
+
+- Root Directory: `frontend`
+- Framework Preset: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Environment variable: `VITE_API_BASE_URL=<verified Render backend origin>`
+
+No `vercel.json` is required because the current application has no client-side routes beyond `/`. After deployment, verify a hard refresh, static assets, browser console, CORS, Mock Analyze/Generate, mobile layout, and backend failure messages before publishing either URL.
+
+Recommended order: deploy Render in Mock mode, verify `/api/health`, configure Vercel with the backend URL, deploy Vercel, update Render `FRONTEND_ORIGIN`, redeploy the backend, and perform online E2E acceptance.
+
 ## Security notes
 
 - `backend/.env` and frontend environment overrides are ignored by Git.
@@ -187,7 +268,7 @@ npm run test:e2e
 - The frontend validates and rebuilds generated elements again before displaying a preview.
 - Express rejects JSON bodies larger than 256 KB.
 - `/api/ai` is rate limited to 20 requests per 15 minutes by default.
-- CORS allows only `FRONTEND_ORIGIN`.
+- CORS allows only exact HTTP(S) origins listed in `FRONTEND_ORIGIN`.
 - AI calls time out after 20 seconds by default and accept cancellation signals.
 - The service does not log complete whiteboards, environment variables, request bodies, or API keys.
 - Model output is validated before it is returned; neither frontend path uses raw HTML rendering.
@@ -201,6 +282,23 @@ npm run test:e2e
 - **429 response:** wait for the rate-limit window before retrying.
 - **Unexpected AI response:** retry once; the backend rejects malformed model output instead of returning unsafe data.
 
-## Current scope
+## Known limitations
 
-Authentication, databases, multiplayer collaboration, image upload, cloud persistence, advanced automatic layout, and direct AI canvas mutation remain out of scope.
+- There is no verified online deployment yet, so production routing, hosting CORS, console, and latency remain unverified.
+- Live AI was contract-tested with injected runners, not with a real API key or paid request.
+- Connectors are plain lines without arrowheads.
+- Automatic generated layouts are intentionally simple and do not use a graph-layout engine.
+- Large boards have no pan/zoom, cloud persistence, or multiplayer collaboration.
+- The production JavaScript bundle currently triggers Vite's non-blocking 500 kB chunk warning.
+
+## Future Work
+
+- Complete Render and Vercel deployment and online acceptance, then create the `v1.0.0` tag.
+- Add arrow connectors and improved automatic graph layouts.
+- Add pan, zoom, element grouping, and richer text editing.
+- Add optional authenticated cloud persistence and collaboration without weakening local-first use.
+- Split non-critical UI code when bundle analysis shows a meaningful loading benefit.
+
+## Contributing and license
+
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). This project is available under the [MIT License](LICENSE).

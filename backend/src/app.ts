@@ -16,6 +16,21 @@ interface CreateAppOptions {
   liveGenerationRunner?: LiveGenerationRunner
 }
 
+const parseAllowedOrigins = (configuredOrigins: string) =>
+  new Set(
+    configuredOrigins
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => {
+        try {
+          const url = new URL(origin)
+          return (url.protocol === 'http:' || url.protocol === 'https:') && url.origin === origin
+        } catch {
+          return false
+        }
+      }),
+  )
+
 const jsonErrorHandler: ErrorRequestHandler = (error, _request, response, next) => {
   const status =
     typeof error === 'object' && error !== null && 'status' in error && typeof error.status === 'number'
@@ -42,12 +57,13 @@ const jsonErrorHandler: ErrorRequestHandler = (error, _request, response, next) 
 export const createApp = (options: CreateAppOptions = {}) => {
   const config = options.config ?? loadConfig()
   const app = express()
+  const allowedOrigins = parseAllowedOrigins(config.frontendOrigin)
 
   app.disable('x-powered-by')
   app.use(
     cors({
       origin: (requestOrigin, callback) => {
-        callback(null, !requestOrigin || requestOrigin === config.frontendOrigin)
+        callback(null, !requestOrigin || allowedOrigins.has(requestOrigin))
       },
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type'],

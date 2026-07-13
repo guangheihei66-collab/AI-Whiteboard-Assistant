@@ -20,7 +20,7 @@ Important variables:
 - `AI_MOCK_MODE=false`: use OpenAI Live mode
 - `OPENAI_API_KEY`: backend-only credential for Live mode
 - `OPENAI_MODEL`: defaults to `gpt-5.6-luna`
-- `FRONTEND_ORIGIN`: the one browser origin allowed by CORS
+- `FRONTEND_ORIGIN`: exact browser origins allowed by CORS, comma-separated when needed
 - `OPENAI_TIMEOUT_MS`: upstream request timeout, default 20000
 
 Start the development server:
@@ -49,3 +49,7 @@ The Generate route supports flowcharts, simple mind maps, architecture sketches,
 Both AI routes are rate limited and return fixed structures. Internal errors, stack traces, request bodies, and credentials are never returned to the browser.
 
 Never commit `backend/.env`. A real OpenAI key belongs only in that ignored file.
+
+## Render preparation
+
+The repository root contains `render.yaml`. It builds from `backend`, runs `npm ci && npm run build`, starts with `npm start`, and checks `/api/health`. Mock mode is the safe default. Configure the verified frontend origin and any optional Live key through the Render Dashboard; the project is not deployed yet.

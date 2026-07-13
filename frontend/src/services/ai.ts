@@ -8,10 +8,16 @@ import type {
 import type { CanvasElement, ElementType } from '../types/canvas'
 import { normalizeGeneratedProposal } from '../utils/normalizeGeneratedElements'
 
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(
-  /\/$/,
-  '',
-)
+export const resolveAPIBaseUrl = (
+  configuredUrl: string | undefined,
+  isDevelopment: boolean,
+) => {
+  const normalized = configuredUrl?.trim().replace(/\/$/, '')
+  if (normalized) return normalized
+  return isDevelopment ? 'http://localhost:3001' : ''
+}
+
+const apiBaseUrl = resolveAPIBaseUrl(import.meta.env.VITE_API_BASE_URL, import.meta.env.DEV)
 
 const elementTypes: ElementType[] = ['line', 'rectangle', 'circle', 'text']
 
@@ -89,6 +95,14 @@ interface GenerateWhiteboardInput {
 }
 
 const requestAI = async (path: string, payload: unknown, signal: AbortSignal) => {
+  if (!apiBaseUrl) {
+    throw new AIServiceError(
+      'API_NOT_CONFIGURED',
+      0,
+      'The AI service URL is not configured for this deployment.',
+    )
+  }
+
   let response: Response
 
   try {

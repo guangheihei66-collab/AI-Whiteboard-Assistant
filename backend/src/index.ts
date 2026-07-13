@@ -4,7 +4,7 @@ import { loadConfig } from './config.js'
 const config = loadConfig()
 const app = createApp({ config })
 
-app.listen(config.port, () => {
+app.listen(config.port, '0.0.0.0', () => {
   const mode = config.mockMode ? 'mock' : 'live'
   console.log(`AI Whiteboard backend listening on http://localhost:${config.port} (${mode} mode)`)
 })

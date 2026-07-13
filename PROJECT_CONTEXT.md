@@ -32,7 +32,8 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 
 - Render backend and Vercel frontend are not deployed.
 - Live AI has not been tested with a real API key in this release-acceptance environment.
-- Stage-eight deployment configuration, repository screenshot, README packaging, and long-term documentation remain pending.
+- Stage-eight deployment configuration, repository screenshot, README packaging, and long-term documentation are complete locally.
+- Real Render and Vercel deployment plus online acceptance remain pending.
 - The `v1.0.0` tag is blocked until real deployment and online acceptance pass.
 
 ## Resolved bugs

@@ -70,13 +70,26 @@ describe('API security boundaries', () => {
   })
 
   it('allows only the configured origin during CORS preflight', async () => {
-    const app = createApp({ config: baseConfig })
+    const secondaryOrigin = 'https://preview.example.com'
+    const app = createApp({
+      config: {
+        ...baseConfig,
+        frontendOrigin: `${baseConfig.frontendOrigin}, ${secondaryOrigin}, invalid-origin`,
+      },
+    })
     const allowed = await request(app)
       .options('/api/ai/analyze')
       .set('Origin', baseConfig.frontendOrigin)
       .set('Access-Control-Request-Method', 'POST')
       .expect(204)
     assert.equal(allowed.headers['access-control-allow-origin'], baseConfig.frontendOrigin)
+
+    const secondary = await request(app)
+      .options('/api/ai/analyze')
+      .set('Origin', secondaryOrigin)
+      .set('Access-Control-Request-Method', 'POST')
+      .expect(204)
+    assert.equal(secondary.headers['access-control-allow-origin'], secondaryOrigin)
 
     const denied = await request(app)
       .options('/api/ai/analyze')

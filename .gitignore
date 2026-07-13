@@ -7,6 +7,9 @@ dist
 # Environment variables and secrets
 .env
 .env.local
+.env.*
+!.env.example
+!**/.env.example
 .env.*.local
 
 # Test artifacts
@@ -23,3 +26,4 @@ npm-debug.log*
 Thumbs.db
 .idea
 .vscode
+.vercel

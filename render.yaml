@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ai-whiteboard-assistant-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AI_MOCK_MODE
+        value: true
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-5.6-luna
+      - key: OPENAI_TIMEOUT_MS
+        value: 20000
+      - key: AI_RATE_LIMIT
+        value: 20

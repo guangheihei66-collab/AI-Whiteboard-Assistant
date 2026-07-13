@@ -11,14 +11,16 @@ npm run dev
 
 Vite normally opens at `http://localhost:5173`. Start the backend separately to use AI analysis.
 
-To override the backend URL, copy `.env.example` to `.env.local` and edit `VITE_API_BASE_URL`. Never place an OpenAI key in any frontend environment file.
+To override the backend URL, copy `.env.example` to `.env.local` and edit `VITE_API_BASE_URL`. Production builds require this variable and show a friendly configuration error if it is missing. Never place an OpenAI key in any frontend environment file.
 
 ## Commands
 
 ```bash
 npm run lint
+npm test
 npm run build
 npm run test:e2e
+npm run screenshot
 npm run preview
 ```
 
@@ -34,6 +36,8 @@ npm run preview
 - Dashed translucent Konva previews with Apply, Regenerate, and Cancel actions
 - Batch Apply with one-step Undo/Redo and automatic selection of the first generated element
 - Runtime validation of backend AI responses and no raw HTML rendering
+- React Error Boundary, StrictMode-safe request cleanup, and a stacked mobile layout
+- Vitest component/state tests plus Playwright release and responsive flows
 
 ## Frontend structure
 
