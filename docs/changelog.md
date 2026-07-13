@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Production deployment
+
+- Deployed the Vite frontend to Vercel and the Express backend to Render Free.
+- Fixed production TypeScript dependency installation and configured exact-origin CORS.
+- Verified online health, Mock Analyze, Mock Generate preview, Cancel, and a clean browser console.
+
 ### Reusable local launcher
 
 - Added a Windows `start-project.cmd` entry point for one-click frontend and backend startup.

@@ -4,7 +4,9 @@
 
 [![CI](https://github.com/guangheihei66-collab/AI-Whiteboard-Assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/guangheihei66-collab/AI-Whiteboard-Assistant/actions/workflows/ci.yml)
 
-**Online demo:** 尚未部署. Local release acceptance and GitHub Actions CI pass, but no frontend or backend URL has completed online verification.
+**Online demo:** [https://ai-whiteboard-assistant.vercel.app](https://ai-whiteboard-assistant.vercel.app)
+
+**Backend health:** [https://ai-whiteboard-assistant-backend.onrender.com/api/health](https://ai-whiteboard-assistant-backend.onrender.com/api/health)
 
 ![AI Whiteboard Assistant desktop interface](docs/images/ai-whiteboard-assistant.png)
 
@@ -250,35 +252,35 @@ The latest local acceptance completed on 2026-07-13 with 17 frontend unit tests,
 
 To regenerate the privacy-safe project screenshot, start the Mock backend and frontend at their default local addresses, then run `npm run screenshot` in `frontend`.
 
-## Deployment preparation
+## Deployment
 
-Deployment is prepared but has **not** been performed. Do not replace the status above until both URLs are real and the online acceptance checklist passes.
+The Vercel frontend and Render backend were deployed and verified on 2026-07-13. Online acceptance covered frontend loading, backend health, exact-origin CORS, Mock Analyze, Mock Generate preview, Cancel behavior, browser console errors, page errors, and failed network requests.
 
 ### Render backend
 
-The root `render.yaml` defines the backend service:
+The root `render.yaml` defines the deployed backend service:
 
 - Root Directory: `backend`
-- Build Command: `npm ci && npm run build`
+- Build Command: `npm ci --include=dev && npm run build`
 - Start Command: `npm start`
 - Health Check Path: `/api/health`
 - Default mode: Mock
 
-In Render, set `FRONTEND_ORIGIN` after Vercel provides the real frontend URL. Add `OPENAI_API_KEY` only through the Render Dashboard when Live mode is intentionally enabled.
+Verified URL: [https://ai-whiteboard-assistant-backend.onrender.com](https://ai-whiteboard-assistant-backend.onrender.com). Render `FRONTEND_ORIGIN` is set to the exact Vercel production origin. Add `OPENAI_API_KEY` only through the Render Dashboard when Live mode is intentionally enabled.
 
 ### Vercel frontend
 
-Import the GitHub repository as a Vercel project and configure:
+The GitHub repository is imported as a Vercel project with:
 
 - Root Directory: `frontend`
 - Framework Preset: Vite
 - Build Command: `npm run build`
 - Output Directory: `dist`
-- Environment variable: `VITE_API_BASE_URL=<verified Render backend origin>`
+- Environment variable: `VITE_API_BASE_URL=https://ai-whiteboard-assistant-backend.onrender.com`
 
-No `vercel.json` is required because the current application has no client-side routes beyond `/`. After deployment, verify a hard refresh, static assets, browser console, CORS, Mock Analyze/Generate, mobile layout, and backend failure messages before publishing either URL.
+Verified URL: [https://ai-whiteboard-assistant.vercel.app](https://ai-whiteboard-assistant.vercel.app). No `vercel.json` is required because Vercel uses `frontend` as the project Root Directory and the current application has no client-side routes beyond `/`.
 
-Recommended order: deploy Render in Mock mode, verify `/api/health`, configure Vercel with the backend URL, deploy Vercel, update Render `FRONTEND_ORIGIN`, redeploy the backend, and perform online E2E acceptance.
+The deployed public configuration remains in Mock mode and does not require or expose an OpenAI API key.
 
 ## Security notes
 
@@ -306,7 +308,7 @@ Recommended order: deploy Render in Mock mode, verify `/api/health`, configure V
 
 ## Known limitations
 
-- There is no verified online deployment yet, so production routing, hosting CORS, console, and latency remain unverified.
+- Render's free backend can cold-start after inactivity, and Vercel-hosted access may be slower or less reliable from some regions.
 - Live AI was contract-tested with injected runners, not with a real API key or paid request.
 - Connectors are plain lines without arrowheads.
 - Automatic generated layouts are intentionally simple and do not use a graph-layout engine.
@@ -315,7 +317,7 @@ Recommended order: deploy Render in Mock mode, verify `/api/health`, configure V
 
 ## Future Work
 
-- Complete Render and Vercel deployment and online acceptance, then create the `v1.0.0` tag.
+- Create the `v1.0.0` tag only after explicit release approval; deployment and Mock-mode online acceptance are complete.
 - Add arrow connectors and improved automatic graph layouts.
 - Add pan, zoom, element grouping, and richer text editing.
 - Add optional authenticated cloud persistence and collaboration without weakening local-first use.

@@ -32,11 +32,9 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 
 ## Unfinished work
 
-- Render backend and Vercel frontend are not deployed.
 - Live AI has not been tested with a real API key in this release-acceptance environment.
-- Stage-eight deployment configuration, repository screenshot, README packaging, and long-term documentation are complete locally.
-- Real Render and Vercel deployment plus online acceptance remain pending.
-- The `v1.0.0` tag is blocked until real deployment and online acceptance pass.
+- The `v1.0.0` tag remains pending explicit release approval.
+- Product roadmap items such as arrow connectors, pan/zoom, cloud persistence, and collaboration remain future work.
 
 ## Resolved bugs
 
@@ -47,6 +45,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Freehand lines ignore sub-pixel duplicate movement and stop growing after 5,000 point pairs.
 - Local startup readiness checks bypass the Windows proxy and use the correct IPv4/IPv6 loopback address for each service.
 - Render production builds explicitly include development dependencies so TypeScript and framework declaration packages are available before the runtime starts in production mode.
+- Production CORS now allows the exact verified Vercel origin, while health, Mock Analyze, Mock Generate preview, Cancel, and browser-console acceptance pass online.
 
 ## Important design decisions
 
@@ -57,3 +56,4 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Mock mode is the default for local development, CI, and public evaluation.
 - Prepare deployment before tagging; do not claim an online release until real URLs are verified.
 - Keep the reusable launcher inside each repository and configure it with JSON instead of installing a machine-global launcher.
+- Deploy the static `frontend` directory to Vercel and the Express `backend` to Render; keep the public deployment in Mock mode unless Live credentials are intentionally configured server-side.

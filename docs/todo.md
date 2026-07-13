@@ -1,15 +1,13 @@
 # Roadmap
 
-## Deployment gate
+## Deployment status
 
-- Create the Render backend service from `render.yaml` in Mock mode.
-- Verify the real Render `/api/health` URL.
-- Create the Vercel frontend project with `frontend` as Root Directory.
-- Set the verified Render origin as `VITE_API_BASE_URL`.
-- Set the verified Vercel origin as Render `FRONTEND_ORIGIN` and redeploy.
-- Run online desktop/mobile, CORS, refresh, console, Mock AI, and failure-state acceptance.
-- Optionally configure Live AI in Render and perform one controlled request.
-- Update README with verified URLs, then create and push `v1.0.0`.
+- Render backend is deployed in Mock mode and `/api/health` is verified.
+- Vercel frontend is deployed from the `frontend` Root Directory.
+- `VITE_API_BASE_URL` and exact-origin `FRONTEND_ORIGIN` are configured.
+- Online page load, CORS, Mock Analyze, Mock Generate preview, Cancel, and browser console checks pass.
+- Live AI remains optional and has not used a real paid API request in this acceptance environment.
+- Create and push `v1.0.0` only after explicit release approval.
 
 ## Product improvements
 

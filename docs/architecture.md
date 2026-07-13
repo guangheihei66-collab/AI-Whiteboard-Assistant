@@ -14,7 +14,7 @@ Mock mode returns deterministic local results without a key. Live mode calls Ope
 
 ## Deployment boundary
 
-Render hosts the compiled Express backend. Vercel hosts the Vite static frontend. `VITE_API_BASE_URL` points the browser to Render, and `FRONTEND_ORIGIN` allows only verified Vercel origins. Deployment is currently prepared but not completed.
+Render hosts the compiled Express backend at `https://ai-whiteboard-assistant-backend.onrender.com`. Vercel hosts the Vite static frontend at `https://ai-whiteboard-assistant.vercel.app`. `VITE_API_BASE_URL` points the browser to Render, and `FRONTEND_ORIGIN` allows the exact verified Vercel origin. Both deployments and the Mock-mode browser-to-backend path are verified.
 
 ## Local development launcher
 
