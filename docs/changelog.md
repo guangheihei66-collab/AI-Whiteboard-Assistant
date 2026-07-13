@@ -7,6 +7,7 @@
 - Added a Windows `start-project.cmd` entry point for one-click frontend and backend startup.
 - Added versioned service configuration, repository path validation, dependency consent, readiness checks, and automatic browser opening.
 - Documented how to reuse the launcher without global installation or system configuration changes.
+- Fixed Render TypeScript builds by including development-only compiler and declaration packages during `npm ci`.
 
 ### Stage eight - Deployment preparation and packaging
 

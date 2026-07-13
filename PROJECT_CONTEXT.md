@@ -46,6 +46,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Small screens no longer inherit a forced 980px document width.
 - Freehand lines ignore sub-pixel duplicate movement and stop growing after 5,000 point pairs.
 - Local startup readiness checks bypass the Windows proxy and use the correct IPv4/IPv6 loopback address for each service.
+- Render production builds explicitly include development dependencies so TypeScript and framework declaration packages are available before the runtime starts in production mode.
 
 ## Important design decisions
 
