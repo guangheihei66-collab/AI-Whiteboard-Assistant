@@ -17,9 +17,10 @@ AI Whiteboard Assistant is a student software engineering project inspired by Ex
 AI-Whiteboard-Assistant/
 ├── frontend/              # React, TypeScript, Vite, Tailwind, Konva
 │   └── src/
-│       ├── components/    # Canvas, Toolbar, and AI panel
-│       ├── hooks/         # Canvas state and actions
-│       └── types/         # Canvas domain types
+│       ├── components/    # Canvas, Transformer, Toolbar, and AI panel
+│       ├── hooks/         # History, shortcuts, auto-save, and canvas actions
+│       ├── types/         # Strict canvas element unions
+│       └── utils/         # Storage migration and element validation
 ├── backend/               # Express + TypeScript mock AI service
 │   └── src/
 │       ├── routes/ai.ts   # Mock analysis endpoint
@@ -61,8 +62,15 @@ npm run build
 
 - Three-column workspace with a tool panel, whiteboard, and AI assistant panel
 - Pen, Rectangle, Circle, Text, and Eraser tools rendered with Konva
+- Select mode with element movement and visible Transformer controls
+- Rectangle, ellipse-compatible Circle, and Text resizing and rotation
+- Line selection and movement without altering freehand point behavior
 - Shared color and stroke-width controls
-- Undo, Clear, versioned Save/Load, legacy line migration, and PNG export
+- Undo/Redo history for creation, movement, transforms, deletion, clearing, and layers
+- Delete/Backspace removal, keyboard tool shortcuts, and Escape deselection
+- Bring Forward and Send Backward layer controls
+- Debounced automatic saving and automatic refresh recovery
+- Versioned Save/Load with version 1/2 migration, strict validation, and PNG export
 - Unified typed element model shared with the mock analysis contract
 - Express `POST /api/ai/analyze` endpoint with deterministic counts and suggestions
 - Friendly AI panel loading, result, and backend-unavailable states
@@ -70,11 +78,20 @@ npm run build
 
 ## Planned next
 
-1. Add element selection, movement, resizing, and shape fill controls.
-2. Replace prompt-based text entry with an inline canvas editor.
-3. Add JSON document import/export and more durable persistence.
+1. Replace prompt-based text entry with an inline canvas editor.
+2. Add multi-selection, duplicate, copy/paste, and alignment controls.
+3. Add JSON document import/export and shape fill controls.
 4. Introduce a provider interface before connecting any real AI service.
 5. Add request validation tests, rate limiting, and production CORS settings.
+
+## Keyboard shortcuts
+
+- `V`, `P`, `R`, `C`, `T`, `E`: Select, Pen, Rectangle, Circle, Text, and Eraser
+- `Delete` / `Backspace`: delete the selected element
+- `Ctrl/Cmd+Z`: Undo
+- `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y`: Redo
+- `Escape`: clear selection
+- `Ctrl/Cmd+S`: save to local storage
 
 ## Out of scope for this MVP
 

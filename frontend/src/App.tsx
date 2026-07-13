@@ -12,24 +12,37 @@ function App() {
         currentTool={canvas.currentTool}
         currentColor={canvas.currentColor}
         strokeWidth={canvas.strokeWidth}
+        hasSelection={Boolean(canvas.selectedElementId)}
+        canUndo={canvas.canUndo}
+        canRedo={canvas.canRedo}
+        canBringForward={canvas.canBringForward}
+        canSendBackward={canvas.canSendBackward}
         onToolChange={canvas.setCurrentTool}
         onColorChange={canvas.setCurrentColor}
         onStrokeWidthChange={canvas.setStrokeWidth}
         onUndo={canvas.undo}
+        onRedo={canvas.redo}
+        onDeleteSelected={canvas.deleteSelected}
+        onBringForward={canvas.bringForward}
+        onSendBackward={canvas.sendBackward}
         onClear={canvas.clear}
         onSave={canvas.save}
         onLoad={canvas.load}
         onExportPng={canvas.exportPng}
-        canUndo={canvas.elements.length > 0}
       />
 
       <Canvas
         elements={canvas.elements}
         currentTool={canvas.currentTool}
+        selectedElementId={canvas.selectedElementId}
+        selectedElement={canvas.selectedElement}
         stageRef={canvas.stageRef}
         onDrawStart={canvas.startDrawing}
         onDrawMove={canvas.continueDrawing}
         onDrawEnd={canvas.endDrawing}
+        onSelect={canvas.selectElement}
+        onMove={canvas.moveElement}
+        onTransform={canvas.transformElement}
         onErase={canvas.eraseElement}
       />
 

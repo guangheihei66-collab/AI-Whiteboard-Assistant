@@ -1,4 +1,4 @@
-export type ToolType = 'pen' | 'rectangle' | 'circle' | 'text' | 'eraser'
+export type ToolType = 'select' | 'pen' | 'rectangle' | 'circle' | 'text' | 'eraser'
 export type ElementType = 'line' | 'rectangle' | 'circle' | 'text'
 
 export interface Point {
@@ -10,6 +10,7 @@ interface BaseElement {
   id: string
   type: ElementType
   color: string
+  rotation: number
 }
 
 export interface LineElement extends BaseElement {
@@ -31,7 +32,8 @@ export interface CircleElement extends BaseElement {
   type: 'circle'
   x: number
   y: number
-  radius: number
+  radiusX: number
+  radiusY: number
   strokeWidth: number
 }
 
@@ -40,12 +42,24 @@ export interface TextElement extends BaseElement {
   x: number
   y: number
   text: string
+  width: number
   fontSize: number
 }
 
 export type CanvasElement = LineElement | RectangleElement | CircleElement | TextElement
 
 export interface CanvasState {
-  version: 2
+  version: 3
   elements: CanvasElement[]
+}
+
+export interface ElementTransform {
+  x: number
+  y: number
+  rotation: number
+  width?: number
+  height?: number
+  radiusX?: number
+  radiusY?: number
+  fontSize?: number
 }

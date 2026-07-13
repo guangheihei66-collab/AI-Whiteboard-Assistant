@@ -52,7 +52,7 @@ test('whiteboard supports shapes, persistence, erasing, and PNG export', async (
   const savedState = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('ai-whiteboard-assistant.canvas.v1') ?? 'null'),
   )
-  expect(savedState.version).toBe(2)
+  expect(savedState.version).toBe(3)
   expect(savedState.elements.map((element: { type: string }) => element.type)).toEqual([
     'line',
     'rectangle',
@@ -115,7 +115,7 @@ test('whiteboard supports shapes, persistence, erasing, and PNG export', async (
   })
   await page.getByRole('button', { name: 'Load' }).click()
   await expect(canvasRegion).toHaveAttribute('data-line-count', '1')
-  await expect(page.getByRole('status')).toContainText('Loaded and upgraded 1 legacy line.')
+  await expect(page.getByRole('status')).toContainText('Loaded and upgraded 1 legacy element.')
 
   await page.screenshot({ path: 'test-results/whiteboard-shapes-live.png', fullPage: true })
 })
