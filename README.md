@@ -1,6 +1,6 @@
 # AI Whiteboard Assistant
 
-AI Whiteboard Assistant is a student software engineering project inspired by Excalidraw. It combines a typed Konva whiteboard with a secure Express AI analysis service. The AI can describe and suggest improvements for the current board, but it cannot create, delete, or edit canvas elements.
+AI Whiteboard Assistant is a student software engineering project inspired by Excalidraw. It combines a typed Konva whiteboard with a secure Express AI service. AI can analyze the current board or propose new content, but a proposal never changes the canvas until the user previews and explicitly applies it.
 
 ## Technology stack
 
@@ -16,6 +16,10 @@ AI Whiteboard Assistant is a student software engineering project inspired by Ex
 - Element movement, resize, rotation, deletion, and layer ordering
 - Undo/Redo, keyboard shortcuts, auto-save, Save/Load, and PNG export
 - Structured AI analysis with Summary, Element Counts, Observations, Suggestions, and Next Actions
+- AI proposals for flowcharts, simple mind maps, architecture sketches, study plans, and sticky-note layouts
+- Mandatory Generate → Validate → Preview → Confirm → Apply workflow
+- Dashed, translucent canvas previews that are excluded from Save, auto-save, history, and PNG export
+- One-step batch Apply, Undo, and Redo for generated proposals
 - Mock mode that works without an API key
 - Live mode that calls the OpenAI Responses API from the backend only
 - Compact canvas summaries: long Line point arrays become bounds, point count, and approximate length
@@ -26,15 +30,15 @@ AI Whiteboard Assistant is a student software engineering project inspired by Ex
 ```text
 AI-Whiteboard-Assistant/
 ├── frontend/
-│   ├── src/components/       # Canvas, Toolbar, Transformer, and AI panel
+│   ├── src/components/       # Canvas, Toolbar, Transformer, AI panel, and preview overlay
 │   ├── src/hooks/            # Canvas history, shortcuts, and auto-save
 │   ├── src/services/ai.ts    # Browser-to-backend AI client
-│   ├── src/types/            # Canvas and AI contracts
-│   └── src/utils/            # Storage migration and validation
+│   ├── src/types/            # Canvas, analysis, and proposal contracts
+│   └── src/utils/            # Storage, proposal normalization, and validation
 ├── backend/
-│   ├── src/routes/ai.ts      # Validated and rate-limited route
-│   ├── src/services/         # Mock orchestration and OpenAI integration
-│   ├── src/schemas/ai.ts     # Zod request and output schemas
+│   ├── src/routes/           # Analyze and Generate routes with rate limiting
+│   ├── src/services/         # Analysis, generation, layout, and OpenAI integration
+│   ├── src/schemas/          # Zod analysis and generated-canvas schemas
 │   ├── src/utils/            # Compact canvas summarization
 │   └── src/app.ts            # Express security and middleware setup
 └── README.md
@@ -129,6 +133,25 @@ Successful response:
 }
 ```
 
+### Generate a whiteboard proposal
+
+```http
+POST /api/ai/generate
+Content-Type: application/json
+```
+
+```json
+{
+  "message": "Create a user login flowchart",
+  "canvas": { "width": 1200, "height": 800 },
+  "existingElements": []
+}
+```
+
+The response contains `mode` and a validated `proposal` with a title, description, and existing canvas element types. Mock mode returns a fixed login flow. Live mode uses the same response structure. The backend replaces temporary model identifiers with final UUIDs, clamps elements to the canvas, and tries to place the proposal away from existing content.
+
+In the UI, open the **Generate** tab, describe the desired diagram, and select **Generate Whiteboard**. Review the dashed preview, then choose **Apply to Canvas**, **Regenerate**, or **Cancel Preview**. Applying the complete proposal creates exactly one history entry.
+
 Errors use one safe structure:
 
 ```json
@@ -159,12 +182,15 @@ npm run test:e2e
 - `backend/.env` and frontend environment overrides are ignored by Git.
 - Live API calls run only on the backend; the browser never receives the key.
 - Zod limits message length, element count, text length, coordinates, dimensions, and Line points.
+- Generated proposals are limited to 40 rectangle, circle, text, or line elements.
+- HTML, JavaScript, invalid colors, duplicate temporary IDs, and unknown element types are rejected.
+- The frontend validates and rebuilds generated elements again before displaying a preview.
 - Express rejects JSON bodies larger than 256 KB.
 - `/api/ai` is rate limited to 20 requests per 15 minutes by default.
 - CORS allows only `FRONTEND_ORIGIN`.
 - AI calls time out after 20 seconds by default and accept cancellation signals.
 - The service does not log complete whiteboards, environment variables, request bodies, or API keys.
-- Model output is validated before it is returned, and the frontend renders text without raw HTML.
+- Model output is validated before it is returned; neither frontend path uses raw HTML rendering.
 
 ## Troubleshooting
 
@@ -177,4 +203,4 @@ npm run test:e2e
 
 ## Current scope
 
-Authentication, databases, multiplayer collaboration, image upload, cloud persistence, and AI-driven canvas mutations remain out of scope.
+Authentication, databases, multiplayer collaboration, image upload, cloud persistence, advanced automatic layout, and direct AI canvas mutation remain out of scope.

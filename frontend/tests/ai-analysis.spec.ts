@@ -74,7 +74,7 @@ test('mock AI analyzes every element type with structured sections', async ({ pa
 
 test('empty whiteboard can be analyzed in mock mode', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('The whiteboard is empty, but it can still be analyzed.')).toBeVisible()
+  await expect(page.getByText('The whiteboard is empty, but AI features are still available.')).toBeVisible()
   await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
 
   const analysis = page.getByRole('region', { name: 'AI analysis' })
@@ -141,10 +141,10 @@ test('AI request blocks duplicate submission and can be cancelled', async ({ pag
   const analyzeButton = page.getByRole('button', { name: 'Analyzing...' })
   await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
   await expect(analyzeButton).toBeDisabled()
-  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cancel Request' })).toBeVisible()
   expect(requestCount).toBe(1)
 
-  await page.getByRole('button', { name: 'Cancel' }).click()
+  await page.getByRole('button', { name: 'Cancel Request' }).click()
   await expect(page.getByText('Analysis cancelled.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Analyze Whiteboard' })).toBeEnabled()
   expect(requestCount).toBe(1)

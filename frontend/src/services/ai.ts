@@ -1,5 +1,12 @@
-import type { AnalyzeResponse, APIErrorResponse, ElementCounts } from '../types/ai'
+import type {
+  AnalyzeResponse,
+  APIErrorResponse,
+  CanvasDimensions,
+  ElementCounts,
+  GenerateResponse,
+} from '../types/ai'
 import type { CanvasElement, ElementType } from '../types/canvas'
+import { normalizeGeneratedProposal } from '../utils/normalizeGeneratedElements'
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001').replace(
   /\/$/,
@@ -74,18 +81,21 @@ interface AnalyzeWhiteboardInput {
   signal: AbortSignal
 }
 
-export const analyzeWhiteboard = async ({
-  message,
-  elements,
-  signal,
-}: AnalyzeWhiteboardInput): Promise<AnalyzeResponse> => {
+interface GenerateWhiteboardInput {
+  message: string
+  canvas: CanvasDimensions
+  existingElements: CanvasElement[]
+  signal: AbortSignal
+}
+
+const requestAI = async (path: string, payload: unknown, signal: AbortSignal) => {
   let response: Response
 
   try {
-    response = await fetch(`${apiBaseUrl}/api/ai/analyze`, {
+    response = await fetch(`${apiBaseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, elements }),
+      body: JSON.stringify(payload),
       signal,
     })
   } catch (error) {
@@ -98,16 +108,23 @@ export const analyzeWhiteboard = async ({
   }
 
   const body: unknown = await response.json().catch(() => null)
-
   if (!response.ok) {
     const parsedError = parseErrorResponse(body)
     throw new AIServiceError(
       parsedError?.error.code ?? 'AI_REQUEST_FAILED',
       response.status,
-      parsedError?.error.message ?? 'AI analysis is temporarily unavailable.',
+      parsedError?.error.message ?? 'The AI service is temporarily unavailable.',
     )
   }
+  return body
+}
 
+export const analyzeWhiteboard = async ({
+  message,
+  elements,
+  signal,
+}: AnalyzeWhiteboardInput): Promise<AnalyzeResponse> => {
+  const body = await requestAI('/api/ai/analyze', { message, elements }, signal)
   const parsed = parseAnalyzeResponse(body)
   if (!parsed) {
     throw new AIServiceError(
@@ -118,4 +135,36 @@ export const analyzeWhiteboard = async ({
   }
 
   return parsed
+}
+
+export const generateWhiteboard = async ({
+  message,
+  canvas,
+  existingElements,
+  signal,
+}: GenerateWhiteboardInput): Promise<GenerateResponse> => {
+  const body = await requestAI(
+    '/api/ai/generate',
+    { message, canvas, existingElements },
+    signal,
+  )
+
+  if (!isRecord(body) || (body.mode !== 'mock' && body.mode !== 'live')) {
+    throw new AIServiceError(
+      'INVALID_RESPONSE',
+      502,
+      'The AI service returned an unexpected generation response.',
+    )
+  }
+
+  const proposal = normalizeGeneratedProposal(body.proposal, canvas)
+  if (!proposal) {
+    throw new AIServiceError(
+      'INVALID_RESPONSE',
+      502,
+      'The AI service returned an invalid whiteboard proposal.',
+    )
+  }
+
+  return { mode: body.mode, proposal }
 }

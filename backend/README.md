@@ -1,6 +1,6 @@
 # AI Whiteboard Assistant Backend
 
-This package provides a TypeScript Express service for secure whiteboard analysis. It supports deterministic Mock mode and a Live mode powered by the official OpenAI Node.js SDK and the Responses API.
+This package provides a TypeScript Express service for secure whiteboard analysis and generated proposals. It supports deterministic Mock mode and a Live mode powered by the official OpenAI Node.js SDK and the Responses API.
 
 ## Setup
 
@@ -42,7 +42,10 @@ npm start
 
 - `GET /api/health`: safe service, mode, and configuration status
 - `POST /api/ai/analyze`: accepts `{ "message": "...", "elements": [...] }`
+- `POST /api/ai/generate`: accepts a message, canvas dimensions, and existing elements
 
-The AI route validates input with Zod, summarizes canvas data, rate limits callers, and returns a fixed structure. Live model output is validated again before it leaves the service. Internal errors, stack traces, request bodies, and credentials are never returned to the browser.
+The Generate route supports flowcharts, simple mind maps, architecture sketches, study plans, and sticky-note layouts using the existing rectangle, circle, text, and line types. Model proposals pass through Zod, receive final UUIDs, are clamped to the requested canvas, and are shifted away from existing content when space permits. Unknown fields are stripped; HTML, JavaScript, invalid colors, duplicate temporary IDs, and oversized proposals are rejected.
+
+Both AI routes are rate limited and return fixed structures. Internal errors, stack traces, request bodies, and credentials are never returned to the browser.
 
 Never commit `backend/.env`. A real OpenAI key belongs only in that ignored file.

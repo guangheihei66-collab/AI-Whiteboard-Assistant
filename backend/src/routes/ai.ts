@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import rateLimit from 'express-rate-limit'
 import { analyzeRequestSchema } from '../schemas/ai.js'
 import { analyzeCanvas, AIServiceError } from '../services/analyzeCanvas.js'
 import type { AppConfig, ErrorResponse, LiveAnalysisRunner } from '../types/ai.js'
+import { createAIRateLimiter } from './rateLimit.js'
 
 interface AIRouterOptions {
   config: AppConfig
@@ -18,23 +18,7 @@ const validationMessages = (issues: { path: PropertyKey[]; message: string }[]) 
 export const createAIRouter = ({ config, liveAnalysisRunner }: AIRouterOptions) => {
   const router = Router()
 
-  router.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1_000,
-      limit: config.aiRateLimit,
-      standardHeaders: 'draft-8',
-      legacyHeaders: false,
-      handler: (_request, response) => {
-        const body: ErrorResponse = {
-          error: {
-            code: 'RATE_LIMITED',
-            message: 'Too many AI analysis requests. Please wait and try again.',
-          },
-        }
-        response.status(429).json(body)
-      },
-    }),
-  )
+  router.use(createAIRateLimiter(config))
 
   router.post('/analyze', async (request, response) => {
     const parsed = analyzeRequestSchema.safeParse(request.body)

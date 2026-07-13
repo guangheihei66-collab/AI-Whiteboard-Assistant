@@ -33,6 +33,7 @@ function App() {
 
       <Canvas
         elements={canvas.elements}
+        previewElements={canvas.previewElements}
         currentTool={canvas.currentTool}
         selectedElementId={canvas.selectedElementId}
         selectedElement={canvas.selectedElement}
@@ -44,9 +45,17 @@ function App() {
         onMove={canvas.moveElement}
         onTransform={canvas.transformElement}
         onErase={canvas.eraseElement}
+        onSizeChange={canvas.updateCanvasSize}
       />
 
-      <AIPanel statusMessage={canvas.statusMessage} elements={canvas.elements} />
+      <AIPanel
+        statusMessage={canvas.statusMessage}
+        elements={canvas.elements}
+        canvasSize={canvas.canvasSize}
+        onPreviewElements={canvas.setAIPreview}
+        onClearPreview={canvas.clearAIPreview}
+        onApplyPreview={canvas.applyAIPreview}
+      />
     </main>
   )
 }

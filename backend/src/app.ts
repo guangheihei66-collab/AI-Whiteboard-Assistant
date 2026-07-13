@@ -2,11 +2,18 @@ import cors from 'cors'
 import express, { type ErrorRequestHandler } from 'express'
 import { loadConfig } from './config.js'
 import { createAIRouter } from './routes/ai.js'
-import type { AppConfig, ErrorResponse, LiveAnalysisRunner } from './types/ai.js'
+import { createGenerateRouter } from './routes/generate.js'
+import type {
+  AppConfig,
+  ErrorResponse,
+  LiveAnalysisRunner,
+  LiveGenerationRunner,
+} from './types/ai.js'
 
 interface CreateAppOptions {
   config?: AppConfig
   liveAnalysisRunner?: LiveAnalysisRunner
+  liveGenerationRunner?: LiveGenerationRunner
 }
 
 const jsonErrorHandler: ErrorRequestHandler = (error, _request, response, next) => {
@@ -60,6 +67,10 @@ export const createApp = (options: CreateAppOptions = {}) => {
   app.use(
     '/api/ai',
     createAIRouter({ config, liveAnalysisRunner: options.liveAnalysisRunner }),
+  )
+  app.use(
+    '/api/ai',
+    createGenerateRouter({ config, liveGenerationRunner: options.liveGenerationRunner }),
   )
 
   app.use((_request, response) => {

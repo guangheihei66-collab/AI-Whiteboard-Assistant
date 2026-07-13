@@ -9,10 +9,13 @@ import type {
   Point,
   ToolType,
 } from '../types/canvas'
+import type { CanvasDimensions } from '../types/ai'
+import { AIGenerationPreview } from './AIGenerationPreview'
 import { SelectionTransformer } from './SelectionTransformer'
 
 interface CanvasProps {
   elements: CanvasElement[]
+  previewElements: CanvasElement[]
   currentTool: ToolType
   selectedElementId: string | null
   selectedElement: CanvasElement | null
@@ -24,6 +27,7 @@ interface CanvasProps {
   onMove: (id: string, position: Point) => void
   onTransform: (id: string, transform: ElementTransform) => void
   onErase: (id: string) => void
+  onSizeChange: (size: CanvasDimensions) => void
 }
 
 const cursorByTool: Record<ToolType, string> = {
@@ -37,6 +41,7 @@ const cursorByTool: Record<ToolType, string> = {
 
 export function Canvas({
   elements,
+  previewElements,
   currentTool,
   selectedElementId,
   selectedElement,
@@ -48,6 +53,7 @@ export function Canvas({
   onMove,
   onTransform,
   onErase,
+  onSizeChange,
 }: CanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -57,14 +63,20 @@ export function Canvas({
     if (!container) return
 
     const updateSize = () => {
-      setSize({ width: container.clientWidth, height: container.clientHeight })
+      const nextSize = { width: container.clientWidth, height: container.clientHeight }
+      setSize((current) =>
+        current.width === nextSize.width && current.height === nextSize.height
+          ? current
+          : nextSize,
+      )
+      onSizeChange(nextSize)
     }
 
     updateSize()
     const resizeObserver = new ResizeObserver(updateSize)
     resizeObserver.observe(container)
     return () => resizeObserver.disconnect()
-  }, [])
+  }, [onSizeChange])
 
   const getPointer = (event: KonvaEventObject<MouseEvent | TouchEvent>) =>
     event.target.getStage()?.getPointerPosition() ?? null
@@ -132,6 +144,7 @@ export function Canvas({
         className={`canvas-grid relative flex-1 overflow-hidden ${cursorByTool[currentTool]}`}
         data-testid="whiteboard-canvas"
         data-element-count={elements.length}
+        data-preview-count={previewElements.length}
         data-line-count={elementCounts.line}
         data-rectangle-count={elementCounts.rectangle}
         data-circle-count={elementCounts.circle}
@@ -238,6 +251,7 @@ export function Canvas({
                     )
                 }
               })}
+              <AIGenerationPreview elements={previewElements} />
               <SelectionTransformer
                 stageRef={stageRef}
                 selectedElement={selectedElement}

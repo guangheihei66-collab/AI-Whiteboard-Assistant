@@ -1,5 +1,6 @@
 import type Konva from 'konva'
 import { useCallback, useRef, useState } from 'react'
+import type { CanvasDimensions } from '../types/ai'
 import type {
   CanvasElement,
   CircleElement,
@@ -50,6 +51,8 @@ export function useCanvas() {
   const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR)
   const [strokeWidth, setStrokeWidthState] = useState(DEFAULT_STROKE_WIDTH)
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
+  const [previewElements, setPreviewElements] = useState<CanvasElement[]>([])
+  const [canvasSize, setCanvasSize] = useState<CanvasDimensions>({ width: 1200, height: 800 })
   const [history, setHistory] = useState<CanvasHistory>(() => ({
     past: [],
     present:
@@ -98,6 +101,49 @@ export function useCanvas() {
   )
 
   const clearSelection = useCallback(() => setSelectedElementId(null), [])
+
+  const updateCanvasSize = useCallback((nextSize: CanvasDimensions) => {
+    if (nextSize.width < 320 || nextSize.height < 240) return
+    setCanvasSize((current) =>
+      current.width === nextSize.width && current.height === nextSize.height
+        ? current
+        : nextSize,
+    )
+  }, [])
+
+  const setAIPreview = useCallback((nextElements: CanvasElement[]) => {
+    setPreviewElements(nextElements)
+    setStatusMessage(
+      `Previewing ${nextElements.length} AI-generated element${nextElements.length === 1 ? '' : 's'}.`,
+    )
+  }, [])
+
+  const clearAIPreview = useCallback(() => {
+    setPreviewElements([])
+    setStatusMessage('AI generation preview cancelled. The canvas was not changed.')
+  }, [])
+
+  const applyAIPreview = useCallback(() => {
+    if (previewElements.length === 0) return
+    const occupiedIds = new Set(elements.map((element) => element.id))
+    const appliedElements = previewElements.map((element) => {
+      if (!occupiedIds.has(element.id)) {
+        occupiedIds.add(element.id)
+        return element
+      }
+      const id = createElementId()
+      occupiedIds.add(id)
+      return { ...element, id }
+    })
+
+    commitElements((currentElements) => [...currentElements, ...appliedElements])
+    setPreviewElements([])
+    setCurrentToolState('select')
+    setSelectedElementId(appliedElements[0]?.id ?? null)
+    setStatusMessage(
+      `Added ${appliedElements.length} AI-generated element${appliedElements.length === 1 ? '' : 's'} as one history step.`,
+    )
+  }, [commitElements, elements, previewElements])
 
   const endDrawing = useCallback(() => {
     activeElementRef.current = null
@@ -376,6 +422,7 @@ export function useCanvas() {
   const clear = useCallback(() => {
     endDrawing()
     clearSelection()
+    setPreviewElements([])
     commitElements((currentElements) => (currentElements.length ? [] : currentElements))
     setStatusMessage('Canvas cleared.')
   }, [clearSelection, commitElements, endDrawing])
@@ -393,6 +440,7 @@ export function useCanvas() {
   const load = useCallback(() => {
     endDrawing()
     clearSelection()
+    setPreviewElements([])
     const result = loadCanvasFromStorage()
     if (result.status === 'loaded' || result.status === 'migrated') {
       setHistory({ past: [], present: result.elements, future: [] })
@@ -438,9 +486,12 @@ export function useCanvas() {
     }
 
     const transformer = stage.findOne('.selection-transformer')
+    const aiPreview = stage.findOne('.ai-generation-preview')
     const wasVisible = transformer?.visible() ?? false
+    const wasPreviewVisible = aiPreview?.visible() ?? false
     try {
       transformer?.hide()
+      aiPreview?.hide()
       stage.draw()
       const link = document.createElement('a')
       link.download = `ai-whiteboard-${new Date().toISOString().replace(/[:.]/g, '-')}.png`
@@ -453,6 +504,7 @@ export function useCanvas() {
       setStatusMessage('Unable to export the canvas as PNG.')
     } finally {
       if (wasVisible) transformer?.show()
+      if (wasPreviewVisible) aiPreview?.show()
       stage.draw()
     }
   }, [])
@@ -476,6 +528,8 @@ export function useCanvas() {
     currentColor,
     strokeWidth,
     elements,
+    previewElements,
+    canvasSize,
     selectedElementId,
     selectedElement: elements.find((element) => element.id === selectedElementId) ?? null,
     statusMessage,
@@ -504,5 +558,9 @@ export function useCanvas() {
     bringForward,
     sendBackward,
     exportPng,
+    updateCanvasSize,
+    setAIPreview,
+    clearAIPreview,
+    applyAIPreview,
   }
 }

@@ -55,3 +55,28 @@ export interface LiveAnalysisInput {
 }
 
 export type LiveAnalysisRunner = (input: LiveAnalysisInput) => Promise<unknown>
+
+export interface CanvasDimensions {
+  width: number
+  height: number
+}
+
+export interface GeneratedProposal {
+  title: string
+  description: string
+  elements: import('../schemas/ai.js').CanvasElement[]
+}
+
+export interface GenerateResponse {
+  mode: AIMode
+  proposal: GeneratedProposal
+}
+
+export interface LiveGenerationInput {
+  message: string
+  canvas: CanvasDimensions
+  existingCanvasSummary: string
+  signal: AbortSignal
+}
+
+export type LiveGenerationRunner = (input: LiveGenerationInput) => Promise<unknown>
