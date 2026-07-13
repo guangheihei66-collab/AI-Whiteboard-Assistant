@@ -18,13 +18,14 @@ npm run build
 npm run preview
 ```
 
-## MVP features
+## Whiteboard features
 
-- Freehand Pen drawing with React-managed line data
-- Undo the most recent line
-- Clear all lines
-- Save and restore the canvas with `localStorage`
-- Selectable placeholders for Rectangle, Circle, Text, and Eraser
+- Freehand Pen, Rectangle, center-radius Circle, prompt-based Text, and click Eraser tools
+- Shared color and stroke-width controls
+- Undo the most recent element and Clear all elements
+- Save and restore every element type with versioned `localStorage` data
+- Backward-compatible loading of first-stage line saves
+- Export the whiteboard as a PNG image
 - Responsive Konva stage and a future-facing AI assistant panel
 
 ## Frontend structure

@@ -10,20 +10,27 @@ function App() {
     <main className="flex h-screen min-h-[640px] min-w-[980px] gap-4 overflow-x-auto bg-slate-100 p-4 text-slate-900">
       <Toolbar
         currentTool={canvas.currentTool}
+        currentColor={canvas.currentColor}
+        strokeWidth={canvas.strokeWidth}
         onToolChange={canvas.setCurrentTool}
+        onColorChange={canvas.setCurrentColor}
+        onStrokeWidthChange={canvas.setStrokeWidth}
         onUndo={canvas.undo}
         onClear={canvas.clear}
         onSave={canvas.save}
         onLoad={canvas.load}
-        canUndo={canvas.lines.length > 0}
+        onExportPng={canvas.exportPng}
+        canUndo={canvas.elements.length > 0}
       />
 
       <Canvas
-        lines={canvas.lines}
+        elements={canvas.elements}
         currentTool={canvas.currentTool}
+        stageRef={canvas.stageRef}
         onDrawStart={canvas.startDrawing}
         onDrawMove={canvas.continueDrawing}
         onDrawEnd={canvas.endDrawing}
+        onErase={canvas.eraseElement}
       />
 
       <AIPanel statusMessage={canvas.statusMessage} />

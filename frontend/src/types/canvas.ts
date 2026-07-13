@@ -1,33 +1,51 @@
 export type ToolType = 'pen' | 'rectangle' | 'circle' | 'text' | 'eraser'
+export type ElementType = 'line' | 'rectangle' | 'circle' | 'text'
 
 export interface Point {
   x: number
   y: number
 }
 
-export interface LineData {
+interface BaseElement {
   id: string
-  tool: 'pen'
+  type: ElementType
+  color: string
+}
+
+export interface LineElement extends BaseElement {
+  type: 'line'
   points: number[]
-  stroke: string
   strokeWidth: number
 }
 
-export interface CanvasState {
-  version: 1
-  lines: LineData[]
+export interface RectangleElement extends BaseElement {
+  type: 'rectangle'
+  x: number
+  y: number
+  width: number
+  height: number
+  strokeWidth: number
 }
 
-export interface CanvasController {
-  currentTool: ToolType
-  lines: LineData[]
-  statusMessage: string
-  setCurrentTool: (tool: ToolType) => void
-  startDrawing: (point: Point | null) => void
-  continueDrawing: (point: Point | null) => void
-  endDrawing: () => void
-  undo: () => void
-  clear: () => void
-  save: () => void
-  load: () => void
+export interface CircleElement extends BaseElement {
+  type: 'circle'
+  x: number
+  y: number
+  radius: number
+  strokeWidth: number
+}
+
+export interface TextElement extends BaseElement {
+  type: 'text'
+  x: number
+  y: number
+  text: string
+  fontSize: number
+}
+
+export type CanvasElement = LineElement | RectangleElement | CircleElement | TextElement
+
+export interface CanvasState {
+  version: 2
+  elements: CanvasElement[]
 }
