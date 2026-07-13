@@ -163,7 +163,7 @@ test('Select supports move history, layers, deletion, and keyboard isolation', a
   await expect(canvas).toHaveAttribute('data-selected-id', '')
 
   await page.mouse.click(movedCircle.x, movedCircle.y)
-  const input = page.getByPlaceholder('Optional context for the board...')
+  const input = page.getByLabel('Whiteboard analysis question')
   await input.focus()
   await page.keyboard.type('pr')
   await page.keyboard.press('Delete')

@@ -1,26 +1,48 @@
-# AI Whiteboard Assistant — Backend
+# AI Whiteboard Assistant Backend
 
-This package provides a local Express + TypeScript service for the mock AI assistant. It never calls a real AI provider and does not require an API key.
+This package provides a TypeScript Express service for secure whiteboard analysis. It supports deterministic Mock mode and a Live mode powered by the official OpenAI Node.js SDK and the Responses API.
 
-## Start locally
+## Setup
 
 ```bash
 npm install
+```
+
+Copy the template without committing the resulting file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Important variables:
+
+- `AI_MOCK_MODE=true`: local analysis, no key required
+- `AI_MOCK_MODE=false`: use OpenAI Live mode
+- `OPENAI_API_KEY`: backend-only credential for Live mode
+- `OPENAI_MODEL`: defaults to `gpt-5.6-luna`
+- `FRONTEND_ORIGIN`: the one browser origin allowed by CORS
+- `OPENAI_TIMEOUT_MS`: upstream request timeout, default 20000
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-The service listens on `http://localhost:3001` by default.
-
-## Build and run
+## Commands
 
 ```bash
+npm run typecheck
+npm test
 npm run build
 npm start
 ```
 
 ## Endpoints
 
-- `GET /api/health` returns service health.
-- `POST /api/ai/analyze` accepts `{ "elements": [...] }` and returns deterministic counts and suggestions.
+- `GET /api/health`: safe service, mode, and configuration status
+- `POST /api/ai/analyze`: accepts `{ "message": "...", "elements": [...] }`
 
-`.env.example` documents the supported `PORT` variable for shells and process managers. Do not commit a real `.env` file.
+The AI route validates input with Zod, summarizes canvas data, rate limits callers, and returns a fixed structure. Live model output is validated again before it leaves the service. Internal errors, stack traces, request bodies, and credentials are never returned to the browser.
+
+Never commit `backend/.env`. A real OpenAI key belongs only in that ignored file.

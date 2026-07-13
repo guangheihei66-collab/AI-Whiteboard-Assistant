@@ -6,6 +6,7 @@ const mixedElements = [
     type: 'line',
     points: [20, 20, 90, 90],
     color: '#0f172a',
+    rotation: 0,
     strokeWidth: 3,
   },
   {
@@ -16,6 +17,7 @@ const mixedElements = [
     width: 100,
     height: 80,
     color: '#ef4444',
+    rotation: 0,
     strokeWidth: 4,
   },
   {
@@ -23,8 +25,10 @@ const mixedElements = [
     type: 'circle',
     x: 320,
     y: 120,
-    radius: 45,
+    radiusX: 45,
+    radiusY: 35,
     color: '#2563eb',
+    rotation: 0,
     strokeWidth: 4,
   },
   {
@@ -33,37 +37,115 @@ const mixedElements = [
     x: 420,
     y: 80,
     text: 'Roadmap',
+    width: 140,
     color: '#0f172a',
+    rotation: 0,
     fontSize: 22,
   },
 ]
 
-test('mock AI analyzes every whiteboard element type', async ({ page }) => {
+test('mock AI analyzes every element type with structured sections', async ({ page }) => {
   await page.goto('/')
   await page.evaluate((elements) => {
     localStorage.setItem(
       'ai-whiteboard-assistant.canvas.v1',
-      JSON.stringify({ version: 2, elements }),
+      JSON.stringify({ version: 3, elements }),
     )
   }, mixedElements)
+  await page.reload()
 
-  await page.getByRole('button', { name: 'Load' }).click()
-  await page.getByPlaceholder('Optional context for the board...').fill('Review my roadmap')
+  await page.getByLabel('Whiteboard analysis question').fill('Review my roadmap')
   await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
 
-  const analysis = page.getByRole('region', { name: 'Mock analysis' })
+  const analysis = page.getByRole('region', { name: 'AI analysis' })
   await expect(analysis).toBeVisible()
-  await expect(analysis).toContainText('The whiteboard contains 4 elements.')
+  await expect(analysis).toContainText('mock mode')
+  await expect(analysis).toContainText('The whiteboard contains 4 elements')
+  await expect(analysis).toContainText('Summary')
+  await expect(analysis).toContainText('Element Counts')
+  await expect(analysis).toContainText('Observations')
+  await expect(analysis).toContainText('Suggestions')
+  await expect(analysis).toContainText('Next Actions')
   await expect(analysis).toContainText('line1')
   await expect(analysis).toContainText('rectangle1')
   await expect(analysis).toContainText('circle1')
   await expect(analysis).toContainText('text1')
 })
 
-test('AI panel shows a friendly message when the backend is unavailable', async ({ page }) => {
+test('empty whiteboard can be analyzed in mock mode', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText('The whiteboard is empty, but it can still be analyzed.')).toBeVisible()
+  await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
+
+  const analysis = page.getByRole('region', { name: 'AI analysis' })
+  await expect(analysis).toContainText('currently empty')
+  await expect(analysis).toContainText('line0')
+})
+
+test('AI panel shows friendly backend, configuration, and response errors', async ({ page }) => {
   await page.route('**/api/ai/analyze', (route) => route.abort('connectionrefused'))
   await page.goto('/')
   await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
 
-  await expect(page.getByRole('alert')).toContainText('Unable to reach the mock AI service')
+  await expect(page.getByRole('alert')).toContainText('Unable to reach the AI service')
+  await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+
+  await page.unroute('**/api/ai/analyze')
+  await page.route('**/api/ai/analyze', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: {
+          code: 'AI_NOT_CONFIGURED',
+          message: 'Live AI is not configured. Check the backend environment variables.',
+        },
+      }),
+    }),
+  )
+  await page.getByRole('button', { name: 'Retry' }).click()
+  await expect(page.getByRole('alert')).toContainText('Check the backend environment variables')
+
+  await page.unroute('**/api/ai/analyze')
+  await page.route('**/api/ai/analyze', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{"unexpected":true}' }),
+  )
+  await page.getByRole('button', { name: 'Retry' }).click()
+  await expect(page.getByRole('alert')).toContainText('unexpected response')
+})
+
+test('AI request blocks duplicate submission and can be cancelled', async ({ page }) => {
+  let requestCount = 0
+  await page.route('**/api/ai/analyze', async (route) => {
+    requestCount += 1
+    await new Promise((resolve) => setTimeout(resolve, 2_000))
+    await route
+      .fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          mode: 'mock',
+          analysis: {
+            summary: 'Delayed result',
+            elementCounts: { line: 0, rectangle: 0, circle: 0, text: 0 },
+            observations: [],
+            suggestions: [],
+            nextActions: [],
+          },
+        }),
+      })
+      .catch(() => undefined)
+  })
+
+  await page.goto('/')
+  const analyzeButton = page.getByRole('button', { name: 'Analyzing...' })
+  await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
+  await expect(analyzeButton).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
+  expect(requestCount).toBe(1)
+
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByText('Analysis cancelled.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Analyze Whiteboard' })).toBeEnabled()
+  expect(requestCount).toBe(1)
 })

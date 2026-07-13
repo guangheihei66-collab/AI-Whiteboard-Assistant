@@ -23,6 +23,10 @@ export default defineConfig({
       url: 'http://localhost:3001/api/health',
       reuseExistingServer: false,
       timeout: 120_000,
+      env: {
+        AI_MOCK_MODE: 'true',
+        FRONTEND_ORIGIN: 'http://127.0.0.1:4173',
+      },
     },
   ],
 })

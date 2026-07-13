@@ -1,6 +1,6 @@
-# AI Whiteboard Assistant — Frontend
+# AI Whiteboard Assistant Frontend
 
-The frontend is a Vite + React + TypeScript application that renders an interactive whiteboard with Konva and styles the workspace with Tailwind CSS.
+The frontend is a Vite, React, and TypeScript application that renders an interactive Konva whiteboard and a structured AI analysis panel.
 
 ## Start locally
 
@@ -9,41 +9,36 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5173`.
+Vite normally opens at `http://localhost:5173`. Start the backend separately to use AI analysis.
 
-## Production build
+To override the backend URL, copy `.env.example` to `.env.local` and edit `VITE_API_BASE_URL`. Never place an OpenAI key in any frontend environment file.
+
+## Commands
 
 ```bash
+npm run lint
 npm run build
+npm run test:e2e
 npm run preview
 ```
 
-## Whiteboard features
+## Features
 
-- Freehand Pen, Rectangle, center-radius Circle, prompt-based Text, and click Eraser tools
-- Select mode with movement for all elements and Transformer editing for shapes and text
-- Rectangle, ellipse-compatible Circle, and Text resize/rotate controls
-- Shared color and stroke-width controls
-- Undo/Redo for creation, movement, transforms, deletion, layers, and Clear
-- Keyboard tools, Delete/Backspace, Escape, Save, Undo, and Redo shortcuts
-- Bring Forward and Send Backward layer actions
-- Debounced auto-save, automatic recovery, and manual Save/Load
-- Backward-compatible loading of version 1 and version 2 saves
-- Export the whiteboard as a PNG image
-- Responsive Konva stage and a mock AI analysis panel backed by the local Express service
-
-To use Analyze Whiteboard, also start the backend from `../backend` with `npm install` and `npm run dev`.
+- Pen, Rectangle, Circle, Text, Eraser, and Select tools
+- Move, resize, rotate, delete, layer order, Undo/Redo, Save/Load, auto-save, and PNG export
+- Guarded keyboard shortcuts that do not fire while typing in the AI panel
+- AI question input, loading state, duplicate-submit protection, Cancel, Retry, and safe errors
+- Mock/Live label and structured Summary, Element Counts, Observations, Suggestions, and Next Actions
+- Runtime validation of backend AI responses and no raw HTML rendering
 
 ## Frontend structure
 
 - `src/types/canvas.ts`: canvas domain types
+- `src/types/ai.ts`: AI response contracts
+- `src/services/ai.ts`: cancellable backend client and response validation
 - `src/hooks/useCanvas.ts`: selection, history, and canvas actions
 - `src/hooks/useKeyboardShortcuts.ts`: guarded global keyboard commands
 - `src/hooks/useAutoSave.ts`: debounced persistence
-- `src/utils/storage.ts`: versioned serialization and migration
-- `src/utils/elementGuards.ts`: runtime data validation
-- `src/components/Canvas.tsx`: Konva stage and element rendering
-- `src/components/SelectionTransformer.tsx`: resize and rotate controls
-- `src/components/Toolbar.tsx`: tool and action controls
-- `src/components/AIPanel.tsx`: placeholder AI interface
-- `src/App.tsx`: page composition
+- `src/utils/`: versioned storage migration and element validation
+- `src/components/AIPanel.tsx`: structured AI analysis interface
+- `src/App.tsx`: page composition only

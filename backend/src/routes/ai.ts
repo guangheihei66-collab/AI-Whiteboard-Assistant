@@ -1,61 +1,84 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
+import { analyzeRequestSchema } from '../schemas/ai.js'
+import { analyzeCanvas, AIServiceError } from '../services/analyzeCanvas.js'
+import type { AppConfig, ErrorResponse, LiveAnalysisRunner } from '../types/ai.js'
 
-const aiRouter = Router()
-
-const supportedTypes = ['line', 'rectangle', 'circle', 'text'] as const
-type SupportedType = (typeof supportedTypes)[number]
-
-interface CanvasElementLike {
-  type?: unknown
+interface AIRouterOptions {
+  config: AppConfig
+  liveAnalysisRunner?: LiveAnalysisRunner
 }
 
-const createEmptyCounts = (): Record<SupportedType, number> => ({
-  line: 0,
-  rectangle: 0,
-  circle: 0,
-  text: 0,
-})
-
-aiRouter.post('/analyze', (request, response) => {
-  const elements: unknown = request.body?.elements
-
-  if (!Array.isArray(elements)) {
-    response.status(400).json({ error: 'Request body must include an elements array.' })
-    return
-  }
-
-  const counts = createEmptyCounts()
-  for (const element of elements as CanvasElementLike[]) {
-    if (
-      element &&
-      typeof element === 'object' &&
-      typeof element.type === 'string' &&
-      supportedTypes.includes(element.type as SupportedType)
-    ) {
-      counts[element.type as SupportedType] += 1
-    }
-  }
-
-  const suggestions = []
-  if (elements.length === 0) {
-    suggestions.push('Add a few shapes or notes before asking for a detailed analysis.')
-  } else {
-    suggestions.push('Group related shapes close together to make the board easier to scan.')
-    if (counts.text === 0) {
-      suggestions.push('Add text labels to explain the most important ideas.')
-    } else {
-      suggestions.push('Use consistent colors to connect labels with their related shapes.')
-    }
-  }
-
-  response.json({
-    analysis: {
-      totalElements: elements.length,
-      counts,
-      summary: `The whiteboard contains ${elements.length} element${elements.length === 1 ? '' : 's'}.`,
-      suggestions,
-    },
+const validationMessages = (issues: { path: PropertyKey[]; message: string }[]) =>
+  issues.slice(0, 8).map((issue) => {
+    const path = issue.path.length > 0 ? issue.path.join('.') : 'request'
+    return `${path}: ${issue.message}`
   })
-})
 
-export { aiRouter }
+export const createAIRouter = ({ config, liveAnalysisRunner }: AIRouterOptions) => {
+  const router = Router()
+
+  router.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1_000,
+      limit: config.aiRateLimit,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+      handler: (_request, response) => {
+        const body: ErrorResponse = {
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Too many AI analysis requests. Please wait and try again.',
+          },
+        }
+        response.status(429).json(body)
+      },
+    }),
+  )
+
+  router.post('/analyze', async (request, response) => {
+    const parsed = analyzeRequestSchema.safeParse(request.body)
+    if (!parsed.success) {
+      const body: ErrorResponse = {
+        error: {
+          code: 'INVALID_REQUEST',
+          message: 'The AI analysis request is invalid.',
+          details: validationMessages(parsed.error.issues),
+        },
+      }
+      response.status(400).json(body)
+      return
+    }
+
+    const controller = new AbortController()
+    request.once('aborted', () => controller.abort())
+    response.once('close', () => {
+      if (!response.writableEnded) controller.abort()
+    })
+
+    try {
+      const result = await analyzeCanvas(parsed.data, config, controller.signal, liveAnalysisRunner)
+      if (!controller.signal.aborted && !response.headersSent) response.json(result)
+    } catch (error) {
+      if (controller.signal.aborted || response.headersSent) return
+
+      if (error instanceof AIServiceError) {
+        const body: ErrorResponse = {
+          error: { code: error.code, message: error.publicMessage },
+        }
+        response.status(error.status).json(body)
+        return
+      }
+
+      const body: ErrorResponse = {
+        error: {
+          code: 'AI_REQUEST_FAILED',
+          message: 'AI analysis is temporarily unavailable. Please try again later.',
+        },
+      }
+      response.status(500).json(body)
+    }
+  })
+
+  return router
+}
