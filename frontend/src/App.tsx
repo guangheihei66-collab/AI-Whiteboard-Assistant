@@ -7,7 +7,7 @@ function App() {
   const canvas = useCanvas()
 
   return (
-    <main className="flex h-screen min-h-[640px] min-w-[980px] gap-4 overflow-x-auto bg-slate-100 p-4 text-slate-900">
+    <main className="flex min-h-screen flex-col gap-3 overflow-x-hidden bg-slate-100 p-3 text-slate-900 lg:h-screen lg:min-h-[640px] lg:min-w-[980px] lg:flex-row lg:gap-4 lg:overflow-x-auto lg:p-4">
       <Toolbar
         currentTool={canvas.currentTool}
         currentColor={canvas.currentColor}

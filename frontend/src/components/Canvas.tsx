@@ -128,7 +128,7 @@ export function Canvas({
   const isInteractive = isSelecting || isErasing
 
   return (
-    <section className="flex min-w-[520px] flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section className="flex min-h-[480px] w-full min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:min-w-[520px]">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-5">
         <div>
           <h1 className="font-semibold text-slate-900">AI Whiteboard</h1>

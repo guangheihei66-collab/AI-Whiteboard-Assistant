@@ -192,13 +192,15 @@ export function AIPanel({
     message: string
   }>({ kind: 'analyze', message: 'Analyze this whiteboard.' })
   const activeRequestRef = useRef<AbortController | null>(null)
+  const isMountedRef = useRef(true)
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
       activeRequestRef.current?.abort()
-    },
-    [],
-  )
+    }
+  }, [])
 
   const clearProposal = useCallback(() => {
     if (proposal) onClearPreview()
@@ -228,6 +230,7 @@ export function AIPanel({
             elements,
             signal: controller.signal,
           })
+          if (!isMountedRef.current) return
           setAnalysis(result.analysis)
           setResultMode(result.mode)
         } else {
@@ -237,11 +240,13 @@ export function AIPanel({
             existingElements: elements,
             signal: controller.signal,
           })
+          if (!isMountedRef.current) return
           setProposal(result.proposal)
           setResultMode(result.mode)
           onPreviewElements(result.proposal.elements)
         }
       } catch (error) {
+        if (!isMountedRef.current) return
         if (error instanceof Error && error.name === 'AbortError') {
           setNoticeMessage(`${kind === 'generate' ? 'Generation' : 'Analysis'} cancelled.`)
         } else {
@@ -252,7 +257,7 @@ export function AIPanel({
         }
       } finally {
         if (activeRequestRef.current === controller) activeRequestRef.current = null
-        setIsLoading(false)
+        if (isMountedRef.current) setIsLoading(false)
       }
     },
     [canvasSize, clearProposal, elements, onPreviewElements],
@@ -298,7 +303,7 @@ export function AIPanel({
   const loadingLabel = assistantMode === 'analyze' ? 'Analyzing...' : 'Generating...'
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <aside className="flex min-h-[560px] w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:w-80">
       <header className="flex min-h-16 shrink-0 items-center gap-3 border-b border-slate-200 px-5 py-3">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-100 text-violet-700">
           <Bot size={19} />

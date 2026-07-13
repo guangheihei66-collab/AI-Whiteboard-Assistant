@@ -86,7 +86,7 @@ export function Toolbar({
   onExportPng,
 }: ToolbarProps) {
   return (
-    <aside className="flex w-52 shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+    <aside className="flex w-full shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:w-52">
       <div className="flex h-12 shrink-0 items-center gap-2 px-2">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-600 text-white">
           <Sparkles size={18} />

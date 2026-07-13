@@ -12,24 +12,24 @@ import type {
   TextElement,
   ToolType,
 } from '../types/canvas'
+import {
+  commitCanvasHistory,
+  createCanvasHistory,
+  redoCanvasHistory,
+  undoCanvasHistory,
+} from '../utils/canvasHistory'
+import { appendSampledPoint } from '../utils/lineSampling'
 import { loadCanvasFromStorage, saveCanvasToStorage } from '../utils/storage'
 import { useAutoSave } from './useAutoSave'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
 
 const DEFAULT_COLOR = '#0f172a'
 const DEFAULT_STROKE_WIDTH = 3
-const MAX_HISTORY_ENTRIES = 100
 
 interface ActiveElement {
   id: string
   type: Exclude<ElementType, 'text'>
   start: Point
-}
-
-interface CanvasHistory {
-  past: CanvasElement[][]
-  present: CanvasElement[]
-  future: CanvasElement[][]
 }
 
 const createElementId = () =>
@@ -38,9 +38,6 @@ const createElementId = () =>
 
 const estimateTextWidth = (text: string, fontSize: number) =>
   Math.max(40, Math.ceil(text.length * fontSize * 0.62))
-
-const appendPast = (past: CanvasElement[][], snapshot: CanvasElement[]) =>
-  [...past, snapshot].slice(-MAX_HISTORY_ENTRIES)
 
 export function useCanvas() {
   const initialLoadRef = useRef<ReturnType<typeof loadCanvasFromStorage> | null>(null)
@@ -53,14 +50,13 @@ export function useCanvas() {
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
   const [previewElements, setPreviewElements] = useState<CanvasElement[]>([])
   const [canvasSize, setCanvasSize] = useState<CanvasDimensions>({ width: 1200, height: 800 })
-  const [history, setHistory] = useState<CanvasHistory>(() => ({
-    past: [],
-    present:
+  const [history, setHistory] = useState(() =>
+    createCanvasHistory(
       initialLoad.status === 'loaded' || initialLoad.status === 'migrated'
         ? initialLoad.elements
         : [],
-    future: [],
-  }))
+    ),
+  )
   const [statusMessage, setStatusMessage] = useState(() => {
     if (initialLoad.status === 'loaded') {
       return `Automatically restored ${initialLoad.elements.length} element${initialLoad.elements.length === 1 ? '' : 's'}.`
@@ -79,12 +75,7 @@ export function useCanvas() {
     (updater: (currentElements: CanvasElement[]) => CanvasElement[]) => {
       setHistory((current) => {
         const nextElements = updater(current.present)
-        if (nextElements === current.present) return current
-        return {
-          past: appendPast(current.past, current.present),
-          present: nextElements,
-          future: [],
-        }
+        return commitCanvasHistory(current, nextElements)
       })
     },
     [],
@@ -265,7 +256,8 @@ export function useCanvas() {
           if (element.id !== active.id) return element
 
           if (element.type === 'line') {
-            return { ...element, points: [...element.points, point.x, point.y] }
+            const points = appendSampledPoint(element.points, point)
+            return points === element.points ? element : { ...element, points }
           }
 
           if (element.type === 'rectangle') {
@@ -393,13 +385,7 @@ export function useCanvas() {
     endDrawing()
     clearSelection()
     setHistory((current) => {
-      const previous = current.past.at(-1)
-      if (!previous) return current
-      return {
-        past: current.past.slice(0, -1),
-        present: previous,
-        future: [current.present, ...current.future],
-      }
+      return undoCanvasHistory(current)
     })
     setStatusMessage('Undo completed.')
   }, [clearSelection, endDrawing])
@@ -408,13 +394,7 @@ export function useCanvas() {
     endDrawing()
     clearSelection()
     setHistory((current) => {
-      const next = current.future[0]
-      if (!next) return current
-      return {
-        past: appendPast(current.past, current.present),
-        present: next,
-        future: current.future.slice(1),
-      }
+      return redoCanvasHistory(current)
     })
     setStatusMessage('Redo completed.')
   }, [clearSelection, endDrawing])
@@ -443,7 +423,7 @@ export function useCanvas() {
     setPreviewElements([])
     const result = loadCanvasFromStorage()
     if (result.status === 'loaded' || result.status === 'migrated') {
-      setHistory({ past: [], present: result.elements, future: [] })
+      setHistory(createCanvasHistory(result.elements))
     }
     setStatusMessage(result.message)
   }, [clearSelection, endDrawing])
