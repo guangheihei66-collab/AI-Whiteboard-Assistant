@@ -33,7 +33,7 @@ function App() {
         onErase={canvas.eraseElement}
       />
 
-      <AIPanel statusMessage={canvas.statusMessage} />
+      <AIPanel statusMessage={canvas.statusMessage} elements={canvas.elements} />
     </main>
   )
 }

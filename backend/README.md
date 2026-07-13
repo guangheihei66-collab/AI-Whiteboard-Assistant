@@ -1,5 +1,26 @@
 # AI Whiteboard Assistant — Backend
 
-This directory is reserved for a future Node.js + Express service.
+This package provides a local Express + TypeScript service for the mock AI assistant. It never calls a real AI provider and does not require an API key.
 
-The first-stage MVP is frontend-only, so no server or API endpoints are implemented yet. A later phase can add validated AI proxy endpoints, document persistence, and collaboration services without coupling them to the canvas rendering layer.
+## Start locally
+
+```bash
+npm install
+npm run dev
+```
+
+The service listens on `http://localhost:3001` by default.
+
+## Build and run
+
+```bash
+npm run build
+npm start
+```
+
+## Endpoints
+
+- `GET /api/health` returns service health.
+- `POST /api/ai/analyze` accepts `{ "elements": [...] }` and returns deterministic counts and suggestions.
+
+`.env.example` documents the supported `PORT` variable for shells and process managers. Do not commit a real `.env` file.

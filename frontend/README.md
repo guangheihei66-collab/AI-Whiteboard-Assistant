@@ -26,7 +26,9 @@ npm run preview
 - Save and restore every element type with versioned `localStorage` data
 - Backward-compatible loading of first-stage line saves
 - Export the whiteboard as a PNG image
-- Responsive Konva stage and a future-facing AI assistant panel
+- Responsive Konva stage and a mock AI analysis panel backed by the local Express service
+
+To use Analyze Whiteboard, also start the backend from `../backend` with `npm install` and `npm run dev`.
 
 ## Frontend structure
 
