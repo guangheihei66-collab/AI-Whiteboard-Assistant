@@ -18,6 +18,7 @@ import {
 import type {
   AIAnalysis,
   AIMode,
+  AIRequestPhase,
   CanvasDimensions,
   GenerationProposal,
 } from '../types/ai'
@@ -161,13 +162,23 @@ const friendlyError = (error: unknown) => {
   if (!(error instanceof AIServiceError)) {
     return 'The AI service is temporarily unavailable. Please try again.'
   }
+
+  let message = error.message
   if (error.code === 'AI_NOT_CONFIGURED') {
-    return 'Live AI is not configured. Check the backend environment variables and restart it.'
+    message = 'Live AI is not configured. Check the backend environment variables and restart it.'
   }
   if (error.code === 'NETWORK_ERROR') {
-    return 'Unable to reach the AI service. Start the backend with npm run dev and try again.'
+    message = 'Unable to reach the AI service. Check the backend status and try again.'
   }
-  return error.message
+  if (error.code === 'REQUEST_TIMEOUT') {
+    message = 'The AI service took too long to respond. It may be waking up; please retry.'
+  }
+  if (error.code === 'RATE_LIMITED' && error.retryAfterSeconds !== undefined) {
+    const waitMinutes = Math.max(1, Math.ceil(error.retryAfterSeconds / 60))
+    message = `Too many AI requests. Please wait about ${waitMinutes} minute(s) and try again.`
+  }
+
+  return error.requestId ? `${message} Reference: ${error.requestId}` : message
 }
 
 export function AIPanel({
@@ -187,6 +198,7 @@ export function AIPanel({
   const [errorMessage, setErrorMessage] = useState('')
   const [noticeMessage, setNoticeMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [requestPhase, setRequestPhase] = useState<AIRequestPhase | null>(null)
   const [lastRequest, setLastRequest] = useState<{
     kind: AssistantMode
     message: string
@@ -216,6 +228,7 @@ export function AIPanel({
       activeRequestRef.current = controller
       setLastRequest({ kind, message: trimmedMessage })
       setIsLoading(true)
+      setRequestPhase(null)
       setErrorMessage('')
       setNoticeMessage('')
 
@@ -229,6 +242,9 @@ export function AIPanel({
             message: trimmedMessage,
             elements,
             signal: controller.signal,
+            onPhase: (phase) => {
+              if (isMountedRef.current) setRequestPhase(phase)
+            },
           })
           if (!isMountedRef.current) return
           setAnalysis(result.analysis)
@@ -239,6 +255,9 @@ export function AIPanel({
             canvas: canvasSize,
             existingElements: elements,
             signal: controller.signal,
+            onPhase: (phase) => {
+              if (isMountedRef.current) setRequestPhase(phase)
+            },
           })
           if (!isMountedRef.current) return
           setProposal(result.proposal)
@@ -257,7 +276,10 @@ export function AIPanel({
         }
       } finally {
         if (activeRequestRef.current === controller) activeRequestRef.current = null
-        if (isMountedRef.current) setIsLoading(false)
+        if (isMountedRef.current) {
+          setIsLoading(false)
+          setRequestPhase(null)
+        }
       }
     },
     [canvasSize, clearProposal, elements, onPreviewElements],
@@ -269,6 +291,7 @@ export function AIPanel({
     setAssistantMode(nextMode)
     setErrorMessage('')
     setNoticeMessage('')
+    setRequestPhase(null)
     setResultMode(null)
   }
 
@@ -301,6 +324,14 @@ export function AIPanel({
   const setActiveMessage = assistantMode === 'analyze' ? setAnalysisMessage : setGenerationMessage
   const actionLabel = assistantMode === 'analyze' ? 'Analyze Whiteboard' : 'Generate Whiteboard'
   const loadingLabel = assistantMode === 'analyze' ? 'Analyzing...' : 'Generating...'
+  const requestPhaseLabel =
+    requestPhase === 'connecting'
+      ? 'Connecting to the AI service...'
+      : requestPhase === 'retrying'
+        ? 'Temporary failure detected. Retrying once...'
+        : requestPhase === 'requesting'
+          ? 'AI request in progress...'
+          : ''
 
   return (
     <aside className="flex min-h-[560px] w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:w-80">
@@ -452,6 +483,15 @@ export function AIPanel({
         <p className="text-center text-[11px] text-slate-400">
           Generation always requires preview and confirmation.
         </p>
+        {isLoading && requestPhaseLabel && (
+          <p
+            data-testid="ai-request-phase"
+            aria-live="polite"
+            className="text-center text-[11px] text-indigo-500"
+          >
+            {requestPhaseLabel}
+          </p>
+        )}
       </form>
     </aside>
   )

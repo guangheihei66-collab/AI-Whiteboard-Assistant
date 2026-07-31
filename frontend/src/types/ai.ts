@@ -1,7 +1,15 @@
 import type { CanvasElement, ElementType } from './canvas'
 
 export type AIMode = 'mock' | 'live'
+export type AIRequestPhase = 'connecting' | 'requesting' | 'retrying'
 export type ElementCounts = Record<ElementType, number>
+
+export interface HealthResponse {
+  status: 'ok'
+  service: string
+  aiMode: AIMode
+  aiConfigured: boolean
+}
 
 export interface AIAnalysis {
   summary: string
@@ -37,5 +45,6 @@ export interface APIErrorResponse {
     code: string
     message: string
     details?: string[]
+    requestId?: string
   }
 }

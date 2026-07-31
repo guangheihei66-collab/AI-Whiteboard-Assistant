@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StrictMode, type ComponentProps } from 'react'
+import { clearAIHealthCache } from '../services/ai'
 import { AIPanel } from './AIPanel'
 
 const createProps = (
@@ -19,10 +20,12 @@ const jsonResponse = (body: unknown, status = 200) =>
   ({
     ok: status >= 200 && status < 300,
     status,
+    headers: new Headers(),
     json: async () => body,
   }) as Response
 
 afterEach(() => {
+  clearAIHealthCache()
   vi.unstubAllGlobals()
 })
 
@@ -32,7 +35,20 @@ describe('AIPanel', () => {
     const request = new Promise<Response>((resolve) => {
       resolveRequest = resolve
     })
-    vi.stubGlobal('fetch', vi.fn(() => request))
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          jsonResponse({
+            status: 'ok',
+            service: 'backend',
+            aiMode: 'mock',
+            aiConfigured: true,
+          }),
+        )
+        .mockImplementationOnce(() => request),
+    )
     const { container } = render(
       <StrictMode>
         <AIPanel {...createProps()} />
@@ -76,8 +92,17 @@ describe('AIPanel', () => {
     const props = createProps()
     vi.stubGlobal(
       'fetch',
-      vi.fn(() =>
-        Promise.resolve(
+      vi
+        .fn()
+        .mockResolvedValueOnce(
+          jsonResponse({
+            status: 'ok',
+            service: 'backend',
+            aiMode: 'mock',
+            aiConfigured: true,
+          }),
+        )
+        .mockResolvedValueOnce(
           jsonResponse({
             mode: 'mock',
             proposal: {
@@ -99,7 +124,6 @@ describe('AIPanel', () => {
             },
           }),
         ),
-      ),
     )
     render(<AIPanel {...props} />)
 
