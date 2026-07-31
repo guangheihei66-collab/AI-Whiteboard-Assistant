@@ -60,7 +60,7 @@ test('mock AI analyzes every element type with structured sections', async ({ pa
   const analysis = page.getByRole('region', { name: 'AI analysis' })
   await expect(analysis).toBeVisible()
   await expect(analysis).toContainText('mock mode')
-  await expect(analysis).toContainText('The whiteboard contains 4 elements')
+  await expect(analysis).toContainText('contains 4 elements')
   await expect(analysis).toContainText('Summary')
   await expect(analysis).toContainText('Element Counts')
   await expect(analysis).toContainText('Observations')

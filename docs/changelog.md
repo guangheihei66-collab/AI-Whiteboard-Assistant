@@ -6,6 +6,7 @@
 - Added AI health preflight, timeout handling, bounded Mock retry, Live no-retry behavior, request phase feedback, and correlation IDs.
 - Added backend request IDs, privacy-safe request logging, graceful shutdown, and CORS exposure for diagnostic headers.
 - Added the reusable local acceptance command, `.nvmrc`, a detailed Chinese user manual, and `SECURITY.md`.
+- Made Analyze tolerant of persisted one-point Pen marks and legacy numeric values; Mock analysis now classifies common board patterns and reports concrete structural issues.
 
 ## v1.0.0 - 2026-07-13
 

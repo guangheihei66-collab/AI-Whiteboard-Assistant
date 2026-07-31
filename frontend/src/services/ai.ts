@@ -8,6 +8,7 @@ import type {
   HealthResponse,
 } from '../types/ai'
 import type { CanvasElement, ElementType } from '../types/canvas'
+import { normalizeCanvasElementsForAI } from '../utils/normalizeCanvasForAI'
 import { normalizeGeneratedProposal } from '../utils/normalizeGeneratedElements'
 
 const HEALTH_CACHE_TTL_MS = 30_000
@@ -331,7 +332,12 @@ export const analyzeWhiteboard = async ({
   signal,
   onPhase,
 }: AnalyzeWhiteboardInput): Promise<AnalyzeResponse> => {
-  const body = await requestAI('/api/ai/analyze', { message, elements }, signal, onPhase)
+  const body = await requestAI(
+    '/api/ai/analyze',
+    { message, elements: normalizeCanvasElementsForAI(elements) },
+    signal,
+    onPhase,
+  )
   const parsed = parseAnalyzeResponse(body)
   if (!parsed) {
     throw new AIServiceError(
@@ -353,7 +359,7 @@ export const generateWhiteboard = async ({
 }: GenerateWhiteboardInput): Promise<GenerateResponse> => {
   const body = await requestAI(
     '/api/ai/generate',
-    { message, canvas, existingElements },
+    { message, canvas, existingElements: normalizeCanvasElementsForAI(existingElements) },
     signal,
     onPhase,
   )

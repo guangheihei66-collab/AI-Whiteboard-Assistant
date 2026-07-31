@@ -20,6 +20,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Generated content follows Generate, validate, preview, confirm, and batch-apply steps.
 - `start-project.cmd` delegates to a reusable PowerShell launcher, while `project-start.json` keeps service-specific commands and readiness URLs outside the script logic. The launcher starts hidden processes, records ownership metadata, writes ignored timestamped logs, and exposes status/stop commands.
 - Backend responses carry a safe `X-Request-Id`; frontend AI requests perform health preflight, timeout, and bounded Mock-only retry.
+- Analyze requests are normalized on the frontend before submission, and Mock mode identifies common board patterns while calling out concrete malformed or overlapping elements.
 
 ## Completed functionality
 
@@ -51,6 +52,7 @@ AI Whiteboard Assistant is a maintainable student software-engineering project t
 - Render production builds explicitly include development dependencies so TypeScript and framework declaration packages are available before the runtime starts in production mode.
 - Production CORS now allows the exact verified Vercel origin, while health, Mock Analyze, Mock Generate preview, Cancel, and browser-console acceptance pass online.
 - Intermittent AI errors now produce a request correlation ID and phase-aware frontend message; health checks and Mock requests tolerate one transient failure without retrying Live requests.
+- Analyze no longer rejects a whole restored board because of a degenerate one-point Pen mark; the response explains likely board type and specific structural issues when Mock mode can infer them.
 - Background services no longer require terminal windows; status/stop scripts verify PID plus process start time before acting.
 
 ## Important design decisions

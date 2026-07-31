@@ -95,6 +95,61 @@ describe('AI analysis API', () => {
     assert.match(response.body.analysis.summary, /empty/i)
   })
 
+  it('accepts a persisted pen press with one point pair', async () => {
+    const response = await request(createApp({ config: baseConfig }))
+      .post('/api/ai/analyze')
+      .send({
+        message: 'Analyze this board',
+        elements: [
+          {
+            id: 'single-point-line',
+            type: 'line',
+            points: [40, 50],
+            color: '#0f172a',
+            rotation: 0,
+            strokeWidth: 3,
+          },
+        ],
+      })
+      .expect(200)
+
+    assert.equal(response.body.analysis.elementCounts.line, 1)
+  })
+
+  it('identifies a likely board type and reports concrete structural issues', async () => {
+    const response = await request(createApp({ config: baseConfig }))
+      .post('/api/ai/analyze')
+      .send({
+        message: 'Review this user login flow',
+        elements: [
+          {
+            id: 'tiny-step',
+            type: 'rectangle',
+            x: 20,
+            y: 20,
+            width: 4,
+            height: 6,
+            color: '#2563eb',
+            rotation: 0,
+            strokeWidth: 2,
+          },
+          {
+            id: 'unfinished-connector',
+            type: 'line',
+            points: [40, 40],
+            color: '#0f172a',
+            rotation: 0,
+            strokeWidth: 2,
+          },
+        ],
+      })
+      .expect(200)
+
+    assert.match(response.body.analysis.summary, /user login flow/i)
+    assert.ok(response.body.analysis.observations.some((item: string) => /Rectangle 1/.test(item)))
+    assert.ok(response.body.analysis.observations.some((item: string) => /Line 2/.test(item)))
+  })
+
   it('rejects empty, oversized, and invalid requests', async () => {
     const app = createApp({ config: baseConfig })
 

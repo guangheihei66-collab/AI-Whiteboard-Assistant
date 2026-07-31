@@ -19,7 +19,9 @@ const lineSchema = z
     type: z.literal('line'),
     points: z
       .array(coordinateSchema)
-      .min(4)
+      // A Pen press without movement is persisted as one x/y pair by the canvas.
+      // It is a valid (degenerate) element for analysis and must not invalidate the board.
+      .min(2)
       .max(20_000)
       .refine((points) => points.length % 2 === 0, 'Line points must contain x/y pairs.'),
     strokeWidth: strokeWidthSchema,
