@@ -1,5 +1,17 @@
 # Architecture Decisions
 
+## 2026-07-31 - Observable but privacy-safe runtime
+
+Decision: run the local launcher as hidden, project-owned processes and persist only PID/start-time metadata plus timestamped stdout/stderr logs under an ignored `logs/runtime` directory.
+
+Reason: users should not need to keep a terminal open, while stop operations must never kill an unrelated process by port. AI failures need a correlation ID and timing information, but logs must not contain prompts, boards, environment variables, or credentials.
+
+## 2026-07-31 - Bounded AI resilience
+
+Decision: health checks may retry one transient failure; Mock requests may retry one transient network/502-504 failure; Live requests never auto-retry.
+
+Reason: this improves cold-start and network tolerance without duplicating potentially billable Live requests or hiding persistent failures.
+
 ## 2026-07-13 - Local-first React state
 
 Decision: keep canvas state in React hooks with pure history and storage helpers.

@@ -104,7 +104,7 @@ test('generation blocks empty and duplicate requests and supports cancellation',
   await page.getByRole('button', { name: 'Generate Whiteboard' }).click()
   await expect(page.getByRole('button', { name: 'Generating...' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Cancel Request' })).toBeVisible()
-  expect(requestCount).toBe(1)
+  await expect.poll(() => requestCount).toBe(1)
 
   await page.getByRole('button', { name: 'Cancel Request' }).click()
   await expect(page.getByText('Generation cancelled.')).toBeVisible()

@@ -142,7 +142,7 @@ test('AI request blocks duplicate submission and can be cancelled', async ({ pag
   await page.getByRole('button', { name: 'Analyze Whiteboard' }).click()
   await expect(analyzeButton).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Cancel Request' })).toBeVisible()
-  expect(requestCount).toBe(1)
+  await expect.poll(() => requestCount).toBe(1)
 
   await page.getByRole('button', { name: 'Cancel Request' }).click()
   await expect(page.getByText('Analysis cancelled.')).toBeVisible()

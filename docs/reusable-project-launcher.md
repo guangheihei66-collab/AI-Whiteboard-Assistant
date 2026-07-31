@@ -9,9 +9,14 @@ Copy these files into the root of another repository while preserving the `scrip
 ```text
 project/
 |-- start-project.cmd
+|-- status-project.cmd
+|-- stop-project.cmd
 |-- project-start.json
 `-- scripts/
-    `-- start-project.ps1
+    |-- project-runtime.ps1
+    |-- start-project.ps1
+    |-- status-project.ps1
+    `-- stop-project.ps1
 ```
 
 Keep the CMD and PowerShell files unchanged. Edit `project-start.json` for the new repository.
@@ -50,7 +55,7 @@ Keep the CMD and PowerShell files unchanged. Edit `project-start.json` for the n
 | `services` | Yes | One or more local services |
 | `name` | Yes | Safe terminal-window label |
 | `directory` | Yes | Service directory relative to the repository root |
-| `startCommand` | Yes | Command run in the visible service window |
+| `startCommand` | Yes | Command run by a hidden, project-owned background process |
 | `installCommand` | No | npm install command offered only when `node_modules` is missing |
 | `readyUrl` | No | HTTP(S) endpoint polled before opening the browser |
 
@@ -58,7 +63,7 @@ Service directories are normalized and rejected if they escape the repository. C
 
 ## Daily use
 
-Double-click `start-project.cmd`. Close each service window or press `Ctrl+C` to stop it.
+Double-click `start-project.cmd`; the services run without a terminal window. Use `status-project.cmd` to inspect readiness and `stop-project.cmd` to stop only the verified processes owned by this project.
 
 Validate a copied configuration without installing or starting anything:
 
@@ -71,6 +76,8 @@ Start services without opening a browser:
 ```powershell
 .\start-project.cmd -NoBrowser
 ```
+
+The reusable package also includes `status-project.cmd` and `stop-project.cmd`. Keep `scripts/project-runtime.ps1` alongside the launcher scripts; it owns PID/start-time checks, safe process-tree shutdown, readiness polling, and timestamped logs under `logs/runtime`.
 
 ## Other project types
 

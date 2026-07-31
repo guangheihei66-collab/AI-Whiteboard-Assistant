@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-31 - Company readiness hardening
+
+- Added hidden background startup, status, and safe stop commands with PID/start-time ownership checks and timestamped ignored logs.
+- Added AI health preflight, timeout handling, bounded Mock retry, Live no-retry behavior, request phase feedback, and correlation IDs.
+- Added backend request IDs, privacy-safe request logging, graceful shutdown, and CORS exposure for diagnostic headers.
+- Added the reusable local acceptance command, `.nvmrc`, a detailed Chinese user manual, and `SECURITY.md`.
+
 ## v1.0.0 - 2026-07-13
 
 ### Final release acceptance

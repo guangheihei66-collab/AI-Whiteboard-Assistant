@@ -80,11 +80,11 @@ AI-Whiteboard-Assistant/
 
 ## One-click local startup on Windows
 
-Double-click `start-project.cmd` in the repository root. The launcher validates `project-start.json`, opens the backend and frontend in separate terminal windows, waits for both services, and then opens `http://localhost:5173`.
+Double-click `start-project.cmd` in the repository root. The launcher validates `project-start.json`, starts the backend and frontend as hidden, project-owned background processes, waits for both services, and then opens `http://localhost:5173`. You do not need to keep a terminal window open.
 
 Mock mode is the default, so an API key is not required. If a service has no `node_modules` directory, the launcher explains that npm will use the committed package files and npm registry, then asks before running the configured project-local install command.
 
-To stop the project, press `Ctrl+C` in each service window or close both service windows. The launcher does not install global packages, change `PATH`, change the machine PowerShell policy, or run as a background Windows service.
+To stop the project, run `stop-project.cmd`; to inspect it, run `status-project.cmd`. The launcher does not install global packages, change `PATH`, change the machine PowerShell policy, or run as a permanent Windows service.
 
 Safe configuration-only validation:
 
@@ -97,6 +97,8 @@ Start without opening the browser:
 ```powershell
 .\start-project.cmd -NoBrowser
 ```
+
+Detailed start, stop, status, Mock/Live, troubleshooting, logs, and reuse instructions are in [使用手册](docs/USER_MANUAL.md).
 
 The three reusable files are `start-project.cmd`, `scripts/start-project.ps1`, and `project-start.json`. See [Reusable project launcher](docs/reusable-project-launcher.md) for adapting them to another project.
 
@@ -223,13 +225,14 @@ The response contains `mode` and a validated `proposal` with a title, descriptio
 
 In the UI, open the **Generate** tab, describe the desired diagram, and select **Generate Whiteboard**. Review the dashed preview, then choose **Apply to Canvas**, **Regenerate**, or **Cancel Preview**. Applying the complete proposal creates exactly one history entry.
 
-Errors use one safe structure:
+Errors use one safe structure. Responses also include an `X-Request-Id` header and the same safe correlation ID in the error body for support diagnostics:
 
 ```json
 {
   "error": {
     "code": "AI_REQUEST_FAILED",
-    "message": "AI analysis is temporarily unavailable. Please try again later."
+    "message": "AI analysis is temporarily unavailable. Please try again later.",
+    "requestId": "correlation-id-for-support"
   }
 }
 ```
@@ -245,7 +248,13 @@ npm run build
 cd ../frontend
 npm run lint
 npm run build
+npm run test
 npm run test:e2e
+
+# Or run the local company-readiness check from the repository root:
+cd ..
+.\check-project.cmd
+# Add -IncludeE2E to include Playwright in the same check.
 ```
 
 The final v1.0.0 local acceptance completed on 2026-07-13 with 17 frontend unit tests, 21 backend tests, and 15 Playwright scenarios passing. The release commit is tagged only after its GitHub Actions run succeeds. A Vite chunk-size warning remains non-blocking and is not hidden by changing the warning threshold.
@@ -300,6 +309,7 @@ The deployed public configuration remains in Mock mode and does not require or e
 ## Troubleshooting
 
 - **Backend unavailable:** start `backend` with `npm run dev` and confirm `GET http://localhost:3001/api/health` works.
+- **Intermittent AI error:** run `status-project.cmd`, inspect the referenced `logs/runtime/*.err.log`, and include the UI request ID when reporting the issue. Mock requests have one bounded retry; Live requests are not automatically repeated.
 - **CORS error:** make `FRONTEND_ORIGIN` exactly match the browser origin, including protocol and port.
 - **Live AI not configured:** set `AI_MOCK_MODE=false` and add a valid key to `backend/.env`, then restart the backend.
 - **Model access error:** change `OPENAI_MODEL` to a model available to your OpenAI project.
