@@ -1,5 +1,6 @@
 import { AIPanel } from './components/AIPanel'
 import { Canvas } from './components/Canvas'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Toolbar } from './components/Toolbar'
 import { useCanvas } from './hooks/useCanvas'
 
@@ -48,14 +49,35 @@ function App() {
         onSizeChange={canvas.updateCanvasSize}
       />
 
-      <AIPanel
-        statusMessage={canvas.statusMessage}
-        elements={canvas.elements}
-        canvasSize={canvas.canvasSize}
-        onPreviewElements={canvas.setAIPreview}
-        onClearPreview={canvas.clearAIPreview}
-        onApplyPreview={canvas.applyAIPreview}
-      />
+      <ErrorBoundary
+        fallback={
+          <section
+            role="alert"
+            className="flex min-h-[320px] min-w-0 flex-1 flex-col items-center justify-center rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm lg:min-h-0 lg:max-w-[360px]"
+          >
+            <p className="text-sm font-semibold text-slate-900">AI Assistant is temporarily unavailable.</p>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              The whiteboard is still safe. Reload this page to restore the assistant panel.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+            >
+              Reload assistant
+            </button>
+          </section>
+        }
+      >
+        <AIPanel
+          statusMessage={canvas.statusMessage}
+          elements={canvas.elements}
+          canvasSize={canvas.canvasSize}
+          onPreviewElements={canvas.setAIPreview}
+          onClearPreview={canvas.clearAIPreview}
+          onApplyPreview={canvas.applyAIPreview}
+        />
+      </ErrorBoundary>
     </main>
   )
 }

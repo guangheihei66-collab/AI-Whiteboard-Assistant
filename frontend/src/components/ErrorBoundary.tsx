@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 interface ErrorBoundaryProps {
   children: ReactNode
+  fallback?: ReactNode
 }
 
 interface ErrorBoundaryState {
@@ -24,6 +25,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   render() {
     if (!this.state.hasError) return this.props.children
+
+    if (this.props.fallback) return this.props.fallback
 
     return (
       <main className="grid min-h-screen place-items-center bg-slate-100 p-6 text-slate-900">

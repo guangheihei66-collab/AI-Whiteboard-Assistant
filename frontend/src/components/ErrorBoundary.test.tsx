@@ -21,4 +21,17 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('button', { name: 'Reload' })).toBeVisible()
     expect(screen.queryByText('private rendering detail')).not.toBeInTheDocument()
   })
+
+  it('supports an isolated fallback for optional panels', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    render(
+      <ErrorBoundary fallback={<div>Panel fallback</div>}>
+        <BrokenView />
+      </ErrorBoundary>,
+    )
+
+    expect(screen.getByText('Panel fallback')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Reload' })).not.toBeInTheDocument()
+  })
 })
