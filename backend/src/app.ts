@@ -1,6 +1,7 @@
 import cors from 'cors'
 import express, { type ErrorRequestHandler } from 'express'
 import { loadConfig } from './config.js'
+import { getRequestId, requestContextMiddleware } from './middleware/requestContext.js'
 import { createAIRouter } from './routes/ai.js'
 import { createGenerateRouter } from './routes/generate.js'
 import type {
@@ -46,6 +47,7 @@ const jsonErrorHandler: ErrorRequestHandler = (error, _request, response, next) 
         message: isTooLarge
           ? 'The request body is too large.'
           : 'The request body must contain valid JSON.',
+        requestId: getRequestId(response),
       },
     }
     response.status(responseStatus).json(body)
@@ -60,6 +62,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
   const allowedOrigins = parseAllowedOrigins(config.frontendOrigin)
 
   app.disable('x-powered-by')
+  app.use(requestContextMiddleware)
   app.use(
     cors({
       origin: (requestOrigin, callback) => {
@@ -67,6 +70,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
       },
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type'],
+      exposedHeaders: ['X-Request-Id', 'Retry-After'],
     }),
   )
   app.use(express.json({ limit: '256kb' }))
@@ -91,15 +95,23 @@ export const createApp = (options: CreateAppOptions = {}) => {
 
   app.use((_request, response) => {
     const body: ErrorResponse = {
-      error: { code: 'NOT_FOUND', message: 'Route not found.' },
+      error: { code: 'NOT_FOUND', message: 'Route not found.', requestId: getRequestId(response) },
     }
     response.status(404).json(body)
   })
 
   app.use(jsonErrorHandler)
-  app.use(((error, _request, response, _next) => {
+  app.use(((error, request, response, _next) => {
+    console.error(
+      `[request-error] ${getRequestId(response) ?? 'unknown'} ${request.method} ${request.path}`,
+      error instanceof Error ? error.name : 'UnknownError',
+    )
     const body: ErrorResponse = {
-      error: { code: 'INTERNAL_ERROR', message: 'The server could not process the request.' },
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'The server could not process the request.',
+        requestId: getRequestId(response),
+      },
     }
     if (!response.headersSent) response.status(500).json(body)
   }) satisfies ErrorRequestHandler)

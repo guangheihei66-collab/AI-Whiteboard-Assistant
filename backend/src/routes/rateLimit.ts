@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit'
 import type { AppConfig, ErrorResponse } from '../types/ai.js'
+import { getRequestId } from '../middleware/requestContext.js'
 
 export const createAIRateLimiter = (config: AppConfig) =>
   rateLimit({
@@ -12,6 +13,7 @@ export const createAIRateLimiter = (config: AppConfig) =>
         error: {
           code: 'RATE_LIMITED',
           message: 'Too many AI requests. Please wait and try again.',
+          requestId: getRequestId(response),
         },
       }
       response.status(429).json(body)

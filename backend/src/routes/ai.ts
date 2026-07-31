@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { analyzeRequestSchema } from '../schemas/ai.js'
 import { analyzeCanvas, AIServiceError } from '../services/analyzeCanvas.js'
 import type { AppConfig, ErrorResponse, LiveAnalysisRunner } from '../types/ai.js'
+import { getRequestId } from '../middleware/requestContext.js'
 import { createAIRateLimiter } from './rateLimit.js'
 
 interface AIRouterOptions {
@@ -28,6 +29,7 @@ export const createAIRouter = ({ config, liveAnalysisRunner }: AIRouterOptions) 
           code: 'INVALID_REQUEST',
           message: 'The AI analysis request is invalid.',
           details: validationMessages(parsed.error.issues),
+          requestId: getRequestId(response),
         },
       }
       response.status(400).json(body)
@@ -48,7 +50,7 @@ export const createAIRouter = ({ config, liveAnalysisRunner }: AIRouterOptions) 
 
       if (error instanceof AIServiceError) {
         const body: ErrorResponse = {
-          error: { code: error.code, message: error.publicMessage },
+          error: { code: error.code, message: error.publicMessage, requestId: getRequestId(response) },
         }
         response.status(error.status).json(body)
         return
@@ -58,6 +60,7 @@ export const createAIRouter = ({ config, liveAnalysisRunner }: AIRouterOptions) 
         error: {
           code: 'AI_REQUEST_FAILED',
           message: 'AI analysis is temporarily unavailable. Please try again later.',
+          requestId: getRequestId(response),
         },
       }
       response.status(500).json(body)

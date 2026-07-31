@@ -3,6 +3,7 @@ import { generateRequestSchema } from '../schemas/generatedCanvas.js'
 import { AIServiceError } from '../services/analyzeCanvas.js'
 import { generateWhiteboard } from '../services/generateWhiteboard.js'
 import type { AppConfig, ErrorResponse, LiveGenerationRunner } from '../types/ai.js'
+import { getRequestId } from '../middleware/requestContext.js'
 import { createAIRateLimiter } from './rateLimit.js'
 
 interface GenerateRouterOptions {
@@ -25,6 +26,7 @@ export const createGenerateRouter = ({ config, liveGenerationRunner }: GenerateR
             const path = issue.path.length > 0 ? issue.path.join('.') : 'request'
             return `${path}: ${issue.message}`
           }),
+          requestId: getRequestId(response),
         },
       }
       response.status(400).json(body)
@@ -56,7 +58,11 @@ export const createGenerateRouter = ({ config, liveGenerationRunner }: GenerateR
               'AI generation is temporarily unavailable. Please try again later.',
             )
       const body: ErrorResponse = {
-        error: { code: serviceError.code, message: serviceError.publicMessage },
+        error: {
+          code: serviceError.code,
+          message: serviceError.publicMessage,
+          requestId: getRequestId(response),
+        },
       }
       response.status(serviceError.status).json(body)
     }

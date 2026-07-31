@@ -60,6 +60,15 @@ const elements: CanvasElement[] = [
 ]
 
 describe('AI analysis API', () => {
+  it('adds a correlation id to every response without exposing request data', async () => {
+    const response = await request(createApp({ config: baseConfig }))
+      .get('/api/health')
+      .expect(200)
+
+    assert.match(response.headers['x-request-id'], /^[0-9a-f-]{36}$/)
+    assert.equal(response.body.status, 'ok')
+  })
+
   it('returns a structured mock response without an API key', async () => {
     const response = await request(createApp({ config: baseConfig }))
       .post('/api/ai/analyze')
@@ -121,10 +130,12 @@ describe('AI analysis API', () => {
       .send({ message: 'Analyze this board', elements: [] })
       .expect(503)
 
-    assert.deepEqual(response.body.error, {
-      code: 'AI_NOT_CONFIGURED',
-      message: 'Live AI is not configured. Check the backend environment variables.',
-    })
+    assert.equal(response.body.error.code, 'AI_NOT_CONFIGURED')
+    assert.equal(
+      response.body.error.message,
+      'Live AI is not configured. Check the backend environment variables.',
+    )
+    assert.match(response.body.error.requestId, /^[0-9a-f-]{36}$/)
   })
 
   it('uses the live analysis runner while keeping server-computed counts', async () => {

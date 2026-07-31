@@ -28,6 +28,7 @@ export interface ErrorResponse {
     code: string
     message: string
     details?: string[]
+    requestId?: string
   }
 }
 
