@@ -7,180 +7,19 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Write-LauncherInfo {
-    param([Parameter(Mandatory = $true)][string]$Message)
+$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $scriptDirectory 'project-runtime.ps1')
 
-    Write-Host "[Launcher] $Message" -ForegroundColor Cyan
-}
-
-function Get-TextProperty {
-    param(
-        [Parameter(Mandatory = $true)][object]$Object,
-        [Parameter(Mandatory = $true)][string]$Name,
-        [switch]$Required
-    )
-
-    $property = $Object.PSObject.Properties[$Name]
-    if ($null -eq $property -or $null -eq $property.Value) {
-        if ($Required) {
-            throw "Missing required configuration property '$Name'."
-        }
-
-        return $null
-    }
-
-    $value = ([string]$property.Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($value)) {
-        if ($Required) {
-            throw "Configuration property '$Name' cannot be empty."
-        }
-
-        return $null
-    }
-
-    if ($value -match "[`r`n]") {
-        throw "Configuration property '$Name' cannot contain line breaks."
-    }
-
-    return $value
-}
-
-function Assert-HttpUrl {
-    param(
-        [Parameter(Mandatory = $true)][string]$Value,
-        [Parameter(Mandatory = $true)][string]$Label
-    )
-
-    $parsed = $null
-    if (-not [Uri]::TryCreate($Value, [UriKind]::Absolute, [ref]$parsed)) {
-        throw "$Label must be an absolute URL."
-    }
-
-    if ($parsed.Scheme -notin @('http', 'https')) {
-        throw "$Label must use http or https."
-    }
-}
-
-function Test-NpmCommand {
-    param([AllowNull()][string]$Command)
-
-    return -not [string]::IsNullOrWhiteSpace($Command) -and
-        $Command -match '(?i)(^|[\s&|])npm(?:\.cmd)?(?=\s|$)'
-}
+$runtime = $null
+$records = @()
+$startedRecords = @()
+$launchTimestampUtc = [DateTime]::UtcNow.ToString('o')
 
 try {
-    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $projectRoot = [IO.Path]::GetFullPath((Join-Path $scriptDirectory '..')).TrimEnd('\', '/')
-    $projectRootPrefix = $projectRoot + [IO.Path]::DirectorySeparatorChar
-    $configurationPath = Join-Path $projectRoot 'project-start.json'
+    $runtime = Get-ProjectRuntimeConfiguration -ScriptDirectory $scriptDirectory
 
-    if (-not (Test-Path -LiteralPath $configurationPath -PathType Leaf)) {
-        throw "Missing launcher configuration: $configurationPath"
-    }
-
-    try {
-        $configuration = Get-Content -LiteralPath $configurationPath -Raw -Encoding UTF8 |
-            ConvertFrom-Json
-    }
-    catch {
-        throw "project-start.json is not valid JSON: $($_.Exception.Message)"
-    }
-
-    $versionProperty = $configuration.PSObject.Properties['version']
-    if ($null -eq $versionProperty -or ([string]$versionProperty.Value) -ne '1') {
-        throw 'project-start.json must use launcher version 1.'
-    }
-
-    $browserUrl = Get-TextProperty -Object $configuration -Name 'browserUrl' -Required
-    Assert-HttpUrl -Value $browserUrl -Label 'browserUrl'
-
-    $timeoutSeconds = 60
-    $timeoutProperty = $configuration.PSObject.Properties['startupTimeoutSeconds']
-    if ($null -ne $timeoutProperty) {
-        $parsedTimeout = 0
-        if (-not [int]::TryParse(([string]$timeoutProperty.Value), [ref]$parsedTimeout) -or
-            $parsedTimeout -lt 5 -or $parsedTimeout -gt 600) {
-            throw 'startupTimeoutSeconds must be an integer from 5 through 600.'
-        }
-
-        $timeoutSeconds = $parsedTimeout
-    }
-
-    $servicesProperty = $configuration.PSObject.Properties['services']
-    if ($null -eq $servicesProperty) {
-        throw "Missing required configuration property 'services'."
-    }
-
-    if (-not ($servicesProperty.Value -is [System.Array])) {
-        throw "Configuration property 'services' must be a JSON array."
-    }
-
-    $serviceDefinitions = @($servicesProperty.Value)
-    if ($serviceDefinitions.Count -eq 0) {
-        throw 'At least one service must be configured.'
-    }
-
-    $services = @()
-    foreach ($definition in $serviceDefinitions) {
-        $name = Get-TextProperty -Object $definition -Name 'name' -Required
-        if ($name.Length -gt 60 -or $name -match '[&|<>^]') {
-            throw "Service name '$name' contains unsupported characters or is too long."
-        }
-
-        $directory = Get-TextProperty -Object $definition -Name 'directory' -Required
-        $startCommand = Get-TextProperty -Object $definition -Name 'startCommand' -Required
-        $installCommand = Get-TextProperty -Object $definition -Name 'installCommand'
-        $readyUrl = Get-TextProperty -Object $definition -Name 'readyUrl'
-
-        $servicePath = [IO.Path]::GetFullPath((Join-Path $projectRoot $directory))
-        $isProjectRoot = $servicePath.Equals($projectRoot, [StringComparison]::OrdinalIgnoreCase)
-        $isInsideProject = $servicePath.StartsWith(
-            $projectRootPrefix,
-            [StringComparison]::OrdinalIgnoreCase
-        )
-
-        if (-not $isProjectRoot -and -not $isInsideProject) {
-            throw "Service '$name' points outside the project directory."
-        }
-
-        if (-not (Test-Path -LiteralPath $servicePath -PathType Container)) {
-            throw "Service directory does not exist for '$name': $servicePath"
-        }
-
-        if ($null -ne $readyUrl) {
-            Assert-HttpUrl -Value $readyUrl -Label "readyUrl for '$name'"
-        }
-
-        $services += [PSCustomObject]@{
-            Name = $name
-            Path = $servicePath
-            StartCommand = $startCommand
-            InstallCommand = $installCommand
-            ReadyUrl = $readyUrl
-        }
-    }
-
-    $usesNpm = $false
-    foreach ($service in $services) {
-        if ((Test-NpmCommand -Command $service.StartCommand) -or
-            (Test-NpmCommand -Command $service.InstallCommand)) {
-            $usesNpm = $true
-            break
-        }
-    }
-
-    if ($usesNpm) {
-        if ($null -eq (Get-Command -Name 'node.exe' -CommandType Application -ErrorAction SilentlyContinue)) {
-            throw 'Node.js is required by the configured npm commands but was not found.'
-        }
-
-        if ($null -eq (Get-Command -Name 'npm.cmd' -CommandType Application -ErrorAction SilentlyContinue)) {
-            throw 'npm.cmd is required by the configured services but was not found.'
-        }
-    }
-
-    Write-LauncherInfo "Configuration is valid for $($services.Count) service(s)."
-    foreach ($service in $services) {
+    Write-LauncherInfo "Configuration is valid for $(@($runtime.Services).Count) service(s)."
+    foreach ($service in $runtime.Services) {
         Write-Host "  - $($service.Name): $($service.Path)"
     }
 
@@ -189,7 +28,7 @@ try {
         exit 0
     }
 
-    foreach ($service in $services) {
+    foreach ($service in $runtime.Services) {
         $isNpmInstall = Test-NpmCommand -Command $service.InstallCommand
         $dependencyDirectory = Join-Path $service.Path 'node_modules'
         if (-not $isNpmInstall -or (Test-Path -LiteralPath $dependencyDirectory -PathType Container)) {
@@ -217,42 +56,70 @@ try {
         }
     }
 
-    $projectName = Split-Path -Leaf $projectRoot
-    foreach ($service in $services) {
-        $windowTitle = "$projectName - $($service.Name)" -replace '[&|<>^]', '-'
-        $commandLine = "title $windowTitle && $($service.StartCommand)"
+    $existingState = Read-ProjectRuntimeState -Runtime $runtime
+    if ($null -ne $existingState) {
+        $records = @($existingState.services)
+        $launchTimestampUtc = Get-TextProperty -Object $existingState -Name 'launchedAtUtc' -Required
 
-        Write-LauncherInfo "Starting $($service.Name)..."
-        try {
-            Start-Process -FilePath $env:ComSpec `
-                -ArgumentList @('/d', '/k', $commandLine) `
-                -WorkingDirectory $service.Path | Out-Null
-        }
-        catch {
-            throw "Could not open the '$($service.Name)' service window: $($_.Exception.Message)"
+        $configuredNames = @($runtime.Services | ForEach-Object { $_.Name })
+        $unknownRecords = @($records | Where-Object { $_.name -notin $configuredNames })
+        if ($unknownRecords.Count -gt 0) {
+            $unknownNames = ($unknownRecords | ForEach-Object { $_.name }) -join ', '
+            throw "Runtime state contains unknown services: $unknownNames. No processes were changed."
         }
     }
 
-    $pendingServices = @($services | Where-Object { $null -ne $_.ReadyUrl })
-    $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSeconds)
+    $timestamp = [DateTime]::Now.ToString('yyyy-MM-dd-HHmmss')
+    foreach ($service in $runtime.Services) {
+        $matchingRecords = @($records | Where-Object { $_.name -eq $service.Name })
+        if ($matchingRecords.Count -gt 1) {
+            throw "Runtime state contains duplicate records for '$($service.Name)'. No processes were changed."
+        }
+
+        if ($matchingRecords.Count -eq 1) {
+            $record = $matchingRecords[0]
+            $status = Get-ServiceRuntimeStatus -Record $record -Runtime $runtime
+            if ($status.Status -eq 'stale') {
+                throw "Runtime state for '$($service.Name)' is stale ($($status.Reason)). No process was stopped."
+            }
+
+            if ($status.Status -in @('ready', 'running-not-ready')) {
+                Write-LauncherInfo "$($service.Name) is already running (PID $($record.processId))."
+                continue
+            }
+
+            $records = @($records | Where-Object { $_.name -ne $service.Name })
+        }
+        elseif (Test-ServiceReady -ReadyUrl $service.ReadyUrl) {
+            throw "The readiness endpoint for '$($service.Name)' is already available, but no verified project state exists. No new process was started."
+        }
+
+        Write-LauncherInfo "Starting $($service.Name) in the background..."
+        $newRecord = Start-ProjectServiceProcess -Runtime $runtime -Service $service -Timestamp $timestamp
+        $startedRecords += $newRecord
+        $records += $newRecord
+        Write-ProjectRuntimeState `
+            -Runtime $runtime `
+            -Services $records `
+            -LaunchedAtUtc $launchTimestampUtc
+        Write-LauncherInfo "$($service.Name) started as PID $($newRecord.processId)."
+    }
+
+    $pendingServices = @($runtime.Services | Where-Object { $null -ne $_.ReadyUrl })
+    $deadline = [DateTime]::UtcNow.AddSeconds($runtime.TimeoutSeconds)
 
     while ($pendingServices.Count -gt 0 -and [DateTime]::UtcNow -lt $deadline) {
         $stillPending = @()
         foreach ($service in $pendingServices) {
-            try {
-                $response = Invoke-WebRequest `
-                    -Uri $service.ReadyUrl `
-                    -UseBasicParsing `
-                    -Proxy $null `
-                    -TimeoutSec 2
-                if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
-                    Write-LauncherInfo "$($service.Name) is ready: $($service.ReadyUrl)"
-                }
-                else {
-                    $stillPending += $service
-                }
+            if (Test-ServiceReady -ReadyUrl $service.ReadyUrl) {
+                Write-LauncherInfo "$($service.Name) is ready: $($service.ReadyUrl)"
             }
-            catch {
+            else {
+                $record = @($records | Where-Object { $_.name -eq $service.Name })[0]
+                $status = Get-RecordedProcessStatus -Record $record -Runtime $runtime
+                if ($status.Status -ne 'running') {
+                    throw "$($service.Name) stopped before becoming ready. Check: $($record.standardErrorLog)"
+                }
                 $stillPending += $service
             }
         }
@@ -265,18 +132,41 @@ try {
 
     if ($pendingServices.Count -gt 0) {
         $pendingNames = ($pendingServices | ForEach-Object { $_.Name }) -join ', '
-        throw "Startup timed out while waiting for: $pendingNames. Service windows remain open for diagnostics."
+        throw "Startup timed out while waiting for: $pendingNames. Newly started processes will be stopped; logs are preserved."
     }
 
     if (-not $NoBrowser) {
-        Write-LauncherInfo "Opening $browserUrl"
-        Start-Process -FilePath $browserUrl | Out-Null
+        Write-LauncherInfo "Opening $($runtime.BrowserUrl)"
+        Start-Process -FilePath $runtime.BrowserUrl | Out-Null
     }
 
-    Write-LauncherInfo 'Project started successfully. Close a service window or press Ctrl+C in it to stop that service.'
+    Write-LauncherInfo 'Project started successfully in the background.'
+    Write-Host 'Use status-project.cmd to inspect it and stop-project.cmd to stop it.'
     exit 0
 }
 catch {
+    if ($null -ne $runtime -and $startedRecords.Count -gt 0) {
+        Write-Warning 'Startup failed. Stopping only processes created by this attempt...'
+        for ($index = $startedRecords.Count - 1; $index -ge 0; $index--) {
+            $record = $startedRecords[$index]
+            $result = Stop-VerifiedServiceProcess -Record $record -Runtime $runtime
+            if (-not $result.Stopped) {
+                Write-Warning "Could not stop '$($record.name)': $($result.Message)"
+            }
+            $records = @($records | Where-Object { $_.processId -ne $record.processId })
+        }
+
+        if ($records.Count -gt 0) {
+            Write-ProjectRuntimeState `
+                -Runtime $runtime `
+                -Services $records `
+                -LaunchedAtUtc $launchTimestampUtc
+        }
+        else {
+            Remove-ProjectRuntimeState -Runtime $runtime
+        }
+    }
+
     Write-Host "[Launcher] ERROR: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }

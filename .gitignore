@@ -18,6 +18,7 @@ playwright-report
 .playwright-cli
 
 # Logs
+logs
 *.log
 npm-debug.log*
 
